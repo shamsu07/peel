@@ -34,7 +34,19 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
+    }
+}
+
+// Peel only plays files on the phone, never streams, so ExoPlayer's
+// streaming formats (pulled in by video_player and just_audio) are left out.
+configurations.all {
+    listOf("dash", "hls", "rtsp", "smoothstreaming").forEach {
+        exclude(group = "androidx.media3", module = "media3-exoplayer-$it")
     }
 }
 

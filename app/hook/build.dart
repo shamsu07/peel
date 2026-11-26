@@ -13,8 +13,7 @@ void main(List<String> args) async {
 
     const webpRoot = 'third_party/libwebp';
     const webpDirs = [
-      'src/dec',
-      'src/demux',
+      'src/dec', // anim_encode uses WebPDecode.
       'src/dsp',
       'src/enc',
       'src/mux',
@@ -42,6 +41,20 @@ void main(List<String> args) async {
       includes: [webpRoot],
       defines: const {'WEBP_USE_THREAD': '1'},
       libraries: [if (targetOS == OS.android || targetOS == OS.linux) 'm'],
+      // Small and lean: optimise for size, drop unused code, and export
+      // only our peel_* functions (halves the library, ~0.27 MB).
+      optimizationLevel: OptimizationLevel.oS,
+      flags: [
+        '-ffunction-sections',
+        '-fdata-sections',
+        if (targetOS == OS.iOS || targetOS == OS.macOS) ...[
+          '-Wl,-dead_strip',
+          '-Wl,-exported_symbol,_peel_*',
+        ] else if (targetOS == OS.android || targetOS == OS.linux) ...[
+          '-Wl,--gc-sections',
+          '-Wl,--version-script=${input.packageRoot.resolve('native/peel_webp.map').toFilePath()}',
+        ],
+      ],
     ).run(input: input, output: output);
   });
 }
