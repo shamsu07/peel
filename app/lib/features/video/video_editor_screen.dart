@@ -265,7 +265,7 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
                       Expanded(
                         child: ToolTile(
                           label: 'Recenter',
-                          icon: Icons.center_focus_strong_outlined,
+                          icon: Icons.center_focus_strong_rounded,
                           onTap: () => _update(
                             (d) => d.copyWith(crop: centeredCrop(d.info)),
                           ),
@@ -463,13 +463,15 @@ class _CropPreviewState extends State<_CropPreview> {
     return Container(
       width: side,
       height: side,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: PeelPairs.lilac.fill,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: PeelColors.surface, width: 6),
-        boxShadow: PeelShadows.card,
+        shadows: PeelShadows.card,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(32),
+          side: BorderSide(color: PeelColors.white, width: 6),
+        ),
       ),
-      child: ClipRRect(
+      child: ClipRSuperellipse(
         borderRadius: BorderRadius.circular(26),
         child: GestureDetector(
           onScaleStart: (_) => _startSize = draft.crop.size,
@@ -553,9 +555,11 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(999),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -612,7 +616,7 @@ class _Trimmer extends StatelessWidget {
                   Positioned.fill(
                     top: 3,
                     bottom: 3,
-                    child: ClipRRect(
+                    child: ClipRSuperellipse(
                       borderRadius: BorderRadius.circular(14),
                       child: Row(
                         children: [
@@ -662,9 +666,11 @@ class _Trimmer extends StatelessWidget {
                           onChanged(start, draft.lengthMs);
                         },
                         child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: PeelColors.ink, width: 3),
-                            borderRadius: BorderRadius.circular(16),
+                          decoration: ShapeDecoration(
+                            shape: RoundedSuperellipseBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: BorderSide(color: PeelColors.ink, width: 3),
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -748,19 +754,23 @@ class _Handle extends StatelessWidget {
         onHorizontalDragUpdate: (e) => onDrag(e.delta.dx),
         child: Container(
           width: 22,
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: PeelColors.ink,
-            borderRadius: left
-                ? const BorderRadius.horizontal(left: Radius.circular(12))
-                : const BorderRadius.horizontal(right: Radius.circular(12)),
+            shape: RoundedSuperellipseBorder(
+              borderRadius: left
+                  ? const BorderRadius.horizontal(left: Radius.circular(12))
+                  : const BorderRadius.horizontal(right: Radius.circular(12)),
+            ),
           ),
           child: Center(
             child: Container(
               width: 3,
               height: 18,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: PeelColors.surface,
-                borderRadius: BorderRadius.circular(2),
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
           ),
@@ -804,9 +814,11 @@ class _QualityRow extends StatelessWidget {
             Container(
               width: 28,
               height: 6,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: i <= level ? PeelColors.ink : PeelColors.hairline,
-                borderRadius: BorderRadius.circular(3),
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: BorderRadius.circular(3),
+                ),
               ),
             ),
             const SizedBox(width: 4),
@@ -863,17 +875,19 @@ class _SoundPanel extends StatelessWidget {
       VideoSoundMode.replace => (
         PeelPairs.bubblegum,
         newSound?.origin == SoundOrigin.recording
-            ? Icons.mic_none_rounded
-            : Icons.music_note_outlined,
+            ? Icons.mic_rounded
+            : Icons.music_note_rounded,
         newSound?.label ?? 'Your sound',
         '$seconds, plays in step with the preview',
       ),
     };
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: PeelColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -920,7 +934,7 @@ class _SoundPanel extends StatelessWidget {
                         : 'Record',
                     background: pair.fill,
                     foreground: pair.ink,
-                    leading: const Icon(Icons.mic_none_rounded, size: 18),
+                    leading: const Icon(Icons.mic_rounded, size: 18),
                     onPressed: onRecordAgain,
                   ),
                 ),
@@ -932,7 +946,7 @@ class _SoundPanel extends StatelessWidget {
                         : 'Pick a file',
                     background: pair.fill,
                     foreground: pair.ink,
-                    leading: const Icon(Icons.music_note_outlined, size: 18),
+                    leading: const Icon(Icons.music_note_rounded, size: 18),
                     onPressed: onPickFile,
                   ),
                 ),

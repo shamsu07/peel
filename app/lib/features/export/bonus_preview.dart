@@ -49,9 +49,11 @@ class BonusPreview extends ConsumerWidget {
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: PeelColors.surface,
-                  borderRadius: BorderRadius.circular(7),
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(7),
+                  ),
                 ),
                 child: Text(
                   'BONUS',

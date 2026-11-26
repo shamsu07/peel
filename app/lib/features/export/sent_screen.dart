@@ -151,7 +151,7 @@ class _SentScreenState extends ConsumerState<SentScreen>
                   children: [
                     TextSpan(
                       text: packName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: PeelColors.ink,
                         fontWeight: FontWeight.w700,
                       ),
@@ -165,9 +165,11 @@ class _SentScreenState extends ConsumerState<SentScreen>
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: PeelColors.surface,
-                    borderRadius: BorderRadius.circular(20),
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -278,21 +280,23 @@ class _ChatScene extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 230),
         padding: const EdgeInsets.fromLTRB(9, 6, 7, 5),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: mine ? WhatsAppColors.outgoing : const Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(mine ? 9 : 2),
-            topRight: Radius.circular(mine ? 2 : 9),
-            bottomLeft: const Radius.circular(9),
-            bottomRight: const Radius.circular(9),
-          ),
-          boxShadow: const [
+          shadows: const [
             BoxShadow(
               color: Color(0x21000000),
               offset: Offset(0, 1),
               blurRadius: 0.5,
             ),
           ],
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(mine ? 9 : 2),
+              topRight: Radius.circular(mine ? 2 : 9),
+              bottomLeft: const Radius.circular(9),
+              bottomRight: const Radius.circular(9),
+            ),
+          ),
         ),
         child: Wrap(
           crossAxisAlignment: WrapCrossAlignment.end,
@@ -322,10 +326,12 @@ class _ChatScene extends StatelessWidget {
     return ExcludeSemantics(
       child: Container(
         height: 318,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: WhatsAppColors.wallpaper,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: PeelShadows.card,
+          shadows: PeelShadows.card,
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -410,9 +416,11 @@ class _ChatScene extends StatelessWidget {
                             horizontal: 8,
                             vertical: 3,
                           ),
-                          decoration: BoxDecoration(
+                          decoration: ShapeDecoration(
                             color: const Color(0xFFFFFFFF),
-                            borderRadius: BorderRadius.circular(6),
+                            shape: RoundedSuperellipseBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
                           ),
                           child: const Text(
                             'Today',
@@ -460,9 +468,11 @@ class _ChatScene extends StatelessWidget {
                                   horizontal: 6,
                                   vertical: 3,
                                 ),
-                                decoration: BoxDecoration(
+                                decoration: ShapeDecoration(
                                   color: const Color(0xE6FFFFFF),
-                                  borderRadius: BorderRadius.circular(8),
+                                  shape: RoundedSuperellipseBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                                 child: const _Meta(time: '10:42', read: true),
                               ),
@@ -484,9 +494,11 @@ class _ChatScene extends StatelessWidget {
                     child: Container(
                       height: 36,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
+                      decoration: ShapeDecoration(
                         color: const Color(0xFFFFFFFF),
-                        borderRadius: BorderRadius.circular(18),
+                        shape: RoundedSuperellipseBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
                       ),
                       child: const Row(
                         children: [

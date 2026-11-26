@@ -89,7 +89,7 @@ Future<void> showCreateSheet(BuildContext context, WidgetRef ref) {
               Expanded(
                 child: _SourceTile(
                   pair: PeelPairs.mint,
-                  icon: Icons.image_outlined,
+                  icon: Icons.image_rounded,
                   title: 'Photo',
                   caption: 'From your gallery',
                   tilt: -1.5,
@@ -101,7 +101,7 @@ Future<void> showCreateSheet(BuildContext context, WidgetRef ref) {
               Expanded(
                 child: _SourceTile(
                   pair: PeelPairs.bubblegum,
-                  icon: Icons.smart_display_outlined,
+                  icon: Icons.smart_display_rounded,
                   title: 'Video',
                   caption: 'Up to 10 s',
                   tilt: 1.5,
@@ -113,7 +113,9 @@ Future<void> showCreateSheet(BuildContext context, WidgetRef ref) {
           const SizedBox(height: 16),
           Material(
             color: PeelColors.paper,
-            borderRadius: BorderRadius.circular(22),
+            shape: RoundedSuperellipseBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
             child: InkWell(
               borderRadius: BorderRadius.circular(22),
               onTap: () => then(() => startPhoto(context, ImageSource.camera)),
@@ -124,11 +126,11 @@ Future<void> showCreateSheet(BuildContext context, WidgetRef ref) {
                     Container(
                       width: 44,
                       height: 44,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: PeelColors.surface,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.photo_camera_outlined, size: 22),
+                      child: const Icon(Icons.photo_camera_rounded, size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -149,11 +151,7 @@ Future<void> showCreateSheet(BuildContext context, WidgetRef ref) {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(
-                Icons.volume_up_outlined,
-                size: 16,
-                color: PeelColors.muted,
-              ),
+              Icon(Icons.volume_up_rounded, size: 16, color: PeelColors.muted),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -204,7 +202,7 @@ class _SourceTile extends StatelessWidget {
             Container(
               width: 46,
               height: 46,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: PeelColors.surface,
                 shape: BoxShape.circle,
               ),

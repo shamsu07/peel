@@ -196,9 +196,11 @@ class _RunCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: PeelColors.surface,
-        borderRadius: BorderRadius.circular(PeelRadii.tile),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(PeelRadii.tile),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,9 +209,11 @@ class _RunCard extends StatelessWidget {
             children: [
               Expanded(child: Text(run.job.title, style: PeelType.label())),
               DecoratedBox(
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: pair.fill,
-                  borderRadius: BorderRadius.circular(999),
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(

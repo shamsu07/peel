@@ -147,7 +147,7 @@ class _PeelingScreenState extends ConsumerState<PeelingScreen>
                 flex: 0,
                 child: SizedBox(
                   height: 300,
-                  child: ClipRRect(
+                  child: ClipRSuperellipse(
                     borderRadius: BorderRadius.circular(28),
                     child: ColoredBox(
                       color: PeelColors.surface,
@@ -157,7 +157,7 @@ class _PeelingScreenState extends ConsumerState<PeelingScreen>
                           if (image != null)
                             Padding(
                               padding: const EdgeInsets.all(24),
-                              child: ClipRRect(
+                              child: ClipRSuperellipse(
                                 borderRadius: BorderRadius.circular(18),
                                 child: RawImage(
                                   image: image,
@@ -193,18 +193,20 @@ class _PeelingScreenState extends ConsumerState<PeelingScreen>
                               angle: -0.05,
                               child: Container(
                                 padding: const EdgeInsets.fromLTRB(9, 7, 12, 7),
-                                decoration: BoxDecoration(
+                                decoration: ShapeDecoration(
                                   color: PeelColors.ink,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(
-                                    color: PeelColors.surface,
-                                    width: 3,
+                                  shape: RoundedSuperellipseBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                    side: BorderSide(
+                                      color: PeelColors.surface,
+                                      width: 3,
+                                    ),
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.auto_awesome,
                                       size: 14,
                                       color: PeelColors.surface,
@@ -232,7 +234,7 @@ class _PeelingScreenState extends ConsumerState<PeelingScreen>
                 liveRegion: true,
                 child: Row(
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(

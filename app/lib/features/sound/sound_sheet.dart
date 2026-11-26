@@ -233,7 +233,7 @@ class _SoundSheetState extends State<_SoundSheet> {
               Expanded(
                 child: _SourceButton(
                   pair: PeelPairs.bubblegum,
-                  icon: Icons.mic_none_rounded,
+                  icon: Icons.mic_rounded,
                   title: 'Record',
                   caption: 'Your voice',
                   onTap: _startRecording,
@@ -243,7 +243,7 @@ class _SoundSheetState extends State<_SoundSheet> {
               Expanded(
                 child: _SourceButton(
                   pair: PeelPairs.sky,
-                  icon: Icons.music_note_outlined,
+                  icon: Icons.music_note_rounded,
                   title: 'Audio file',
                   caption: 'From your phone',
                   onTap: _pickFile,
@@ -279,9 +279,11 @@ class _SoundSheetState extends State<_SoundSheet> {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: pair.fill,
-              borderRadius: BorderRadius.circular(24),
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -314,11 +316,13 @@ class _SoundSheetState extends State<_SoundSheet> {
                           child: FractionallySizedBox(
                             heightFactor: _barLevel(i),
                             child: DecoratedBox(
-                              decoration: BoxDecoration(
+                              decoration: ShapeDecoration(
                                 color: _barLit(i, limit)
                                     ? pair.ink
                                     : pair.ink.withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(3),
+                                shape: RoundedSuperellipseBorder(
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
                               ),
                             ),
                           ),
@@ -329,7 +333,7 @@ class _SoundSheetState extends State<_SoundSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                ClipRRect(
+                ClipRSuperellipse(
                   borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: _recordedMs / limit,
@@ -352,9 +356,11 @@ class _SoundSheetState extends State<_SoundSheet> {
                       child: Container(
                         width: 26,
                         height: 26,
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: const Color(0xFFFF5C8A),
-                          borderRadius: BorderRadius.circular(7),
+                          shape: RoundedSuperellipseBorder(
+                            borderRadius: BorderRadius.circular(7),
+                          ),
                         ),
                       ),
                     )
@@ -363,7 +369,7 @@ class _SoundSheetState extends State<_SoundSheet> {
                       children: [
                         SecondaryPillButton(
                           label: 'Record again',
-                          leading: const Icon(Icons.mic_none_rounded, size: 18),
+                          leading: const Icon(Icons.mic_rounded, size: 18),
                           onPressed: _startRecording,
                         ),
                         const SizedBox(width: 16),
@@ -444,9 +450,11 @@ class _SoundSheetState extends State<_SoundSheet> {
         children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4F4F6),
-              borderRadius: BorderRadius.circular(22),
+            decoration: ShapeDecoration(
+              color: PeelColors.paper,
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -603,8 +611,8 @@ class _SourceButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF4F4F6),
-      borderRadius: BorderRadius.circular(22),
+      color: PeelColors.paper,
+      shape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(22)),
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
         onTap: onTap,

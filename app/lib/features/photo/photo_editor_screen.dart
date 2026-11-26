@@ -66,14 +66,14 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final (id, icon, label) in const [
-              ('record', Icons.mic_none_rounded, 'Record again'),
-              ('file', Icons.music_note_outlined, 'Pick a file'),
-              ('remove', Icons.delete_outline_rounded, 'Remove sound'),
+              ('record', Icons.mic_rounded, 'Record again'),
+              ('file', Icons.music_note_rounded, 'Pick a file'),
+              ('remove', Icons.delete_rounded, 'Remove sound'),
             ])
               ListTile(
                 leading: Icon(icon, color: PeelColors.ink),
                 title: Text(label, style: PeelType.label()),
-                shape: RoundedRectangleBorder(
+                shape: RoundedSuperellipseBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 onTap: () => Navigator.of(ctx).pop(id),
@@ -181,14 +181,16 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
                               left: 14,
                               child: Container(
                                 padding: const EdgeInsets.fromLTRB(8, 6, 11, 6),
-                                decoration: BoxDecoration(
+                                decoration: ShapeDecoration(
                                   color: PeelColors.ink,
-                                  borderRadius: BorderRadius.circular(999),
+                                  shape: RoundedSuperellipseBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.auto_awesome,
                                       size: 14,
                                       color: PeelColors.surface,
@@ -266,7 +268,7 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
                           selected: c.whiteEdge,
                           icon: c.whiteEdge
                               ? Icons.toggle_on_rounded
-                              : Icons.toggle_off_outlined,
+                              : Icons.toggle_off_rounded,
                           onTap: () => notifier.update(
                             (d) => d.copyWith(
                               composition: d.composition.copyWith(

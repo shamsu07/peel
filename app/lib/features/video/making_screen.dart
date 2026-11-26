@@ -108,13 +108,15 @@ class _MakingScreenState extends ConsumerState<MakingScreen> {
                 child: Container(
                   width: 236,
                   height: 236,
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: PeelPairs.lilac.fill,
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: PeelColors.surface, width: 6),
-                    boxShadow: PeelShadows.card,
+                    shadows: PeelShadows.card,
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(32),
+                      side: BorderSide(color: PeelColors.white, width: 6),
+                    ),
                   ),
-                  child: ClipRRect(
+                  child: ClipRSuperellipse(
                     borderRadius: BorderRadius.circular(26),
                     child: _StickerFrame(
                       frame: _frame,
@@ -138,7 +140,7 @@ class _MakingScreenState extends ConsumerState<MakingScreen> {
                 Semantics(
                   label: 'Making your sticker',
                   value: '$pct%',
-                  child: ClipRRect(
+                  child: ClipRSuperellipse(
                     borderRadius: BorderRadius.circular(7),
                     child: LinearProgressIndicator(
                       value: _update.fraction,
@@ -234,7 +236,7 @@ class _Step extends StatelessWidget {
           child: Container(
             width: 8,
             height: 8,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: PeelColors.ink,
               shape: BoxShape.circle,
             ),

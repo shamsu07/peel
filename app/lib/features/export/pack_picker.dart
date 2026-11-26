@@ -113,7 +113,7 @@ class _NameSheetState extends State<_NameSheet> {
               suffixIcon: IconButton(
                 tooltip: 'Clear',
                 onPressed: _controller.clear,
-                icon: const Icon(Icons.cancel_rounded, color: PeelColors.muted),
+                icon: Icon(Icons.cancel_rounded, color: PeelColors.muted),
               ),
             ),
           ),
@@ -219,7 +219,9 @@ class _PackRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: PeelColors.paper,
-        borderRadius: BorderRadius.circular(20),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
@@ -231,9 +233,11 @@ class _PackRow extends StatelessWidget {
                   width: 56,
                   height: 56,
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: icon == null ? PeelColors.surface : PeelColors.ink,
-                    borderRadius: BorderRadius.circular(14),
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: icon != null
                       ? Icon(icon, color: PeelColors.surface, size: 26)
@@ -263,10 +267,7 @@ class _PackRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: PeelColors.muted,
-                ),
+                Icon(Icons.chevron_right_rounded, color: PeelColors.muted),
               ],
             ),
           ),

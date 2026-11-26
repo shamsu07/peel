@@ -58,21 +58,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             Semantics(
               header: true,
-              child: Text('Settings.', style: PeelType.title()),
+              child: Text('Settings', style: PeelType.title()),
             ),
             const SizedBox(height: 24),
             SettingsGroup(
               title: 'WhatsApp',
               children: [
                 SettingsRow(
-                  icon: Icons.chat_bubble_outline_rounded,
+                  icon: Icons.chat_bubble_rounded,
                   pair: PeelPairs.mint,
                   title: 'WhatsApp',
                   value: _installed(status?.consumerInstalled),
                 ),
                 if (Platform.isAndroid)
                   SettingsRow(
-                    icon: Icons.storefront_outlined,
+                    icon: Icons.storefront_rounded,
                     pair: PeelPairs.sky,
                     title: 'WhatsApp Business',
                     value: _installed(status?.businessInstalled),
@@ -91,7 +91,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Privacy',
               children: [
                 SettingsRow(
-                  icon: Icons.lock_outline_rounded,
+                  icon: Icons.lock_rounded,
                   pair: PeelPairs.mint,
                   title: 'Your photos stay on this phone',
                   subtitle: 'No account, no uploads',
@@ -103,7 +103,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Help',
               children: [
                 SettingsRow(
-                  icon: Icons.volume_up_outlined,
+                  icon: Icons.volume_up_rounded,
                   pair: PeelPairs.butter,
                   title: 'How stickers with sound work',
                   onTap: () => context.push(Routes.soundHelp),
@@ -120,13 +120,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'About',
               children: [
                 const SettingsRow(
-                  icon: Icons.info_outline_rounded,
+                  icon: Icons.info_rounded,
                   pair: PeelPairs.lilac,
                   title: 'Version',
                   value: '0.1 (test build)',
                 ),
                 SettingsRow(
-                  icon: Icons.science_outlined,
+                  icon: Icons.science_rounded,
                   pair: PeelPairs.bubblegum,
                   title: 'Test lab',
                   subtitle: 'For testing only',
@@ -187,7 +187,7 @@ class SettingsGroup extends StatelessWidget {
               ),
             ),
           ),
-          ClipRRect(
+          ClipRSuperellipse(
             borderRadius: BorderRadius.circular(20),
             child: ColoredBox(
               color: PeelColors.surface,
@@ -196,7 +196,7 @@ class SettingsGroup extends StatelessWidget {
                   for (var i = 0; i < children.length; i++) ...[
                     children[i],
                     if (i < children.length - 1)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(left: 60),
                         child: Divider(
                           height: 1,
@@ -246,13 +246,15 @@ class SettingsRow extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
+                width: 36,
+                height: 36,
+                decoration: ShapeDecoration(
                   color: pair.fill,
-                  borderRadius: BorderRadius.circular(9),
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(11),
+                  ),
                 ),
-                child: Icon(icon, size: 18, color: pair.ink),
+                child: Icon(icon, size: 20, color: pair.ink),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -281,7 +283,7 @@ class SettingsRow extends StatelessWidget {
               if (value != null)
                 Text(value!, style: PeelType.caption().copyWith(fontSize: 15)),
               if (onTap != null)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(left: 4),
                   child: Icon(
                     Icons.chevron_right_rounded,

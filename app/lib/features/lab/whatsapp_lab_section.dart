@@ -293,9 +293,11 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     final pair = ok ? PeelPairs.mint : null;
     return DecoratedBox(
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: pair?.fill ?? PeelColors.track,
-        borderRadius: BorderRadius.circular(999),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -340,9 +342,11 @@ class _PackCard extends StatelessWidget {
     final p = pack;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: PeelColors.surface,
-        borderRadius: BorderRadius.circular(PeelRadii.tile),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(PeelRadii.tile),
+        ),
       ),
       child: p == null
           ? Text(
@@ -398,9 +402,11 @@ class _ThumbTile extends StatelessWidget {
           width: 72,
           height: 72,
           padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: PeelColors.paper,
-            borderRadius: BorderRadius.circular(16),
+            shape: RoundedSuperellipseBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           child: Image.memory(
             thumb.bytes,
@@ -413,9 +419,11 @@ class _ThumbTile extends StatelessWidget {
             left: 4,
             bottom: 4,
             child: DecoratedBox(
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: PeelColors.surface,
-                borderRadius: BorderRadius.circular(6),
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
@@ -442,9 +450,11 @@ class _Note extends StatelessWidget {
     final pair = PeelPairs.butter;
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: pair.fill,
-        borderRadius: BorderRadius.circular(16),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
       child: Text(text, style: PeelType.caption(color: pair.ink)),
     );

@@ -138,7 +138,7 @@ class _TextEditorScreenState extends ConsumerState<TextEditorScreen> {
                                     ),
                                   )
                                 else if (_videoFrame != null && crop != null)
-                                  ClipRRect(
+                                  ClipRSuperellipse(
                                     borderRadius: BorderRadius.circular(32),
                                     child: Image.memory(
                                       _videoFrame!,
@@ -288,7 +288,7 @@ class _FontTile extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: PeelColors.surface,
-        shape: RoundedRectangleBorder(
+        shape: RoundedSuperellipseBorder(
           borderRadius: BorderRadius.circular(18),
           side: BorderSide(
             color: selected ? PeelColors.ink : PeelColors.surface,
@@ -355,7 +355,7 @@ class _Swatch extends StatelessWidget {
               width: selected ? 3 : 2,
             ),
             boxShadow: selected
-                ? const [BoxShadow(color: PeelColors.surface, spreadRadius: -6)]
+                ? [BoxShadow(color: PeelColors.surface, spreadRadius: -6)]
                 : null,
           ),
         ),
