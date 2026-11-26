@@ -52,7 +52,7 @@ def silhouette(p, tf):
 ST=['translate(-10 0) rotate(-5 92.5 -102.5)','translate(152 -6) rotate(4 94 -102.5)','translate(-4.5 239.6) rotate(-4 94 -102.5)','translate(155.5 233.6) rotate(4 91 -102.5)']
 WM=['translate(-10 0) rotate(-6 92.5 -102.5)','translate(150 -10) rotate(4 94 -102.5)','translate(312 6) rotate(-3 94 -102.5)','translate(470 -4) rotate(5 91 -102.5)']
 BG=tuple(os.environ.get('PEEL_BG','#2C2C36,#18181E').split(','))
-ICON_T='translate(274.2 504.3) scale(1.2879)'
+ICON_T='translate(302.2 504.3) scale(1.2879)'
 def adaptive_t(k):  # scale icon composition by k about the centre
     return f'translate({512-512*k:.1f} {512-512*k:.1f}) scale({k}) {ICON_T}'
 def svg(w,h,defs,body,bg=None,vb=None,rx=None):
@@ -71,6 +71,6 @@ open(f'{OUT}/adaptive-foreground.svg','w').write(svg(1024,1024,d,f'<g transform=
 open(f'{OUT}/adaptive-background.svg','w').write(svg(1024,1024,'','',bg=BG))
 md,mb=silhouette('m',ST)
 open(f'{OUT}/adaptive-monochrome.svg','w').write(svg(1024,1024,md,f'<g transform="{adaptive_t(0.66)}">{mb}</g>'))
-wd,wb=sticker('w',WM,'#111113',0.22)
+wd,wb=sticker('w',WM,'#3A2A1A',0.16)
 open(f'{OUT}/wordmark.svg','w').write(svg(830,480,wd,wb,vb='-70 -350 830 480'))
 print('ok', {c:len(v) for c,v in G.items()})
