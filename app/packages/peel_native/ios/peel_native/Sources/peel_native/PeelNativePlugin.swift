@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreImage
+import ImageIO
 import Flutter
 import UIKit
 import UniformTypeIdentifiers
@@ -26,9 +27,9 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
     -> SegmentResult
   {
     try await Task.detached(priority: .userInitiated) {
-      guard let image = UIImage(contentsOfFile: imagePath),
-        let cg = image.uprightScaled(maxSide: CGFloat(maxSide)).cgImage
-      else {
+      // Decode straight to the size needed, upright and 8-bit, instead of
+      // decoding the full photo and redrawing it.
+      guard let cg = Self.uprightThumbnail(path: imagePath, maxSide: Int(maxSide)) else {
         return SegmentResult(status: "error", width: 0, height: 0)
       }
       let request = VNGenerateForegroundInstanceMaskRequest()
@@ -44,7 +45,7 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
       let buffer = try observation.generateMaskedImage(
         ofInstances: observation.allInstances, from: handler, croppedToInstancesExtent: true)
       let ci = CIImage(cvPixelBuffer: buffer)
-      guard let out = CIContext().createCGImage(ci, from: ci.extent),
+      guard let out = Self.ciContext.createCGImage(ci, from: ci.extent),
         let png = UIImage(cgImage: out).pngData()
       else {
         return SegmentResult(status: "error", width: 0, height: 0)
@@ -53,6 +54,24 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
       return SegmentResult(
         status: "ok", path: outPath, width: Int64(out.width), height: Int64(out.height))
     }.value
+  }
+
+  /// One Core Image context for the app's lifetime; they're costly to make.
+  static let ciContext = CIContext()
+
+  /// The photo at [path], upright (EXIF applied), longest side at most
+  /// [maxSide], decoded directly at that size.
+  static func uprightThumbnail(path: String, maxSide: Int) -> CGImage? {
+    guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) else {
+      return nil
+    }
+    let options: [CFString: Any] = [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+      kCGImageSourceThumbnailMaxPixelSize: maxSide,
+      kCGImageSourceShouldCacheImmediately: true,
+    ]
+    return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
   }
 
   // MARK: Video
@@ -152,6 +171,8 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
   // MARK: Sound-sticker MP4 (spec P0-5)
 
   func exportHandoffVideo(job: HandoffJob) async throws -> String {
+    var tempFiles: [URL] = []
+    defer { for url in tempFiles { try? FileManager.default.removeItem(at: url) } }
     let out = URL(fileURLWithPath: job.outPath)
     try? FileManager.default.removeItem(at: out)
     let duration = CMTime(value: job.durationMs, timescale: 1000)
@@ -169,6 +190,7 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
     if let imagePath = job.imagePath {
       let still = FileManager.default.temporaryDirectory
         .appendingPathComponent("peel_still_\(UUID().uuidString).mp4")
+      tempFiles.append(still)
       try await StillVideoWriter.write(
         imagePath: imagePath, to: still, duration: duration, size: Int(size))
       let stillAsset = AVURLAsset(url: still)

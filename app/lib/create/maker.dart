@@ -43,8 +43,8 @@ Future<StickerRecord> savePhotoSticker({
 
   if (sound != null && sound.path != null) {
     // The sound version is extra: if it fails, the sticker still saves.
+    final out = library.newPath('mp4');
     try {
-      final out = library.newPath('mp4');
       await native.exportHandoffVideo(
         HandoffJob(
           outPath: out,
@@ -61,6 +61,7 @@ Future<StickerRecord> savePhotoSticker({
       );
     } catch (e, s) {
       await ErrorLog.record('photo sound video', e, s);
+      await _deletePartial(out);
     }
   }
   return record;
@@ -177,6 +178,11 @@ class VideoMaking {
         ),
       );
       _job = job;
+      if (_cancelled) {
+        // Cancelled while the encoder was starting.
+        job.cancel();
+        return null;
+      }
       final sub = job.progress.listen((p) {
         // Each extra attempt is shorter (fewer frames); keep the bar moving.
         final base = 0.2 + 0.6 * (1 - 1 / p.attempt);
@@ -229,8 +235,8 @@ class VideoMaking {
       // sound for WhatsApp's own "Create sticker". Optional: if it fails,
       // the sticker still saves.
       onUpdate(const MakingUpdate(MakingStage.sound, 0.92));
+      final out = library.newPath('mp4');
       try {
-        final out = library.newPath('mp4');
         // The white edge, corners and text, drawn over the video so the MP4
         // looks like the sticker.
         final style = VideoFrameStyle(caption: draft.caption);
@@ -264,6 +270,7 @@ class VideoMaking {
         );
       } catch (e, s) {
         await ErrorLog.record('video sticker MP4', e, s);
+        await _deletePartial(out);
       }
       onUpdate(const MakingUpdate(MakingStage.checking, 1));
       return record;
@@ -273,4 +280,12 @@ class VideoMaking {
       }
     }
   }
+}
+
+/// Removes a half-written export so failed attempts don't pile up.
+Future<void> _deletePartial(String path) async {
+  try {
+    final f = File(path);
+    if (await f.exists()) await f.delete();
+  } catch (_) {}
 }

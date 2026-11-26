@@ -36,18 +36,33 @@ class PhotoDraft {
   );
 }
 
+/// Owns the draft's images: they're freed when the draft is replaced or
+/// cleared, so an abandoned photo doesn't hold ~10 MB of textures.
 class PhotoDraftNotifier extends Notifier<PhotoDraft?> {
   @override
-  PhotoDraft? build() => null;
+  PhotoDraft? build() {
+    ref.onDispose(() => disposeDraftImages(state));
+    return null;
+  }
 
-  void start(PhotoDraft draft) => state = draft;
+  void start(PhotoDraft draft) {
+    final old = state;
+    state = draft;
+    if (!identical(old?.composition.original, draft.composition.original)) {
+      disposeDraftImages(old);
+    }
+  }
 
   void update(PhotoDraft Function(PhotoDraft d) change) {
     final d = state;
     if (d != null) state = change(d);
   }
 
-  void clear() => state = null;
+  void clear() {
+    final old = state;
+    state = null;
+    disposeDraftImages(old);
+  }
 }
 
 final photoDraftProvider = NotifierProvider<PhotoDraftNotifier, PhotoDraft?>(

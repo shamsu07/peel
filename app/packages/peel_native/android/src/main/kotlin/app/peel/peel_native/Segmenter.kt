@@ -49,9 +49,12 @@ object Segmenter {
             val bitmap = BitmapLoader.load(imagePath, maxSide)
                 ?: return@withContext SegmentResult(status = "error", width = 0, height = 0)
             val client = SubjectSegmentation.getClient(options)
+            // Every bitmap made here is freed in finally: photos are big.
+            var foreground: Bitmap? = null
+            var cropped: Bitmap? = null
             try {
                 val result = client.process(InputImage.fromBitmap(bitmap, 0)).await()
-                val foreground = result.foregroundBitmap
+                foreground = result.foregroundBitmap
                     ?: return@withContext SegmentResult(status = "noSubject", width = 0, height = 0)
                 val bounds = opaqueBounds(foreground)
                 if (bounds == null ||
@@ -59,15 +62,16 @@ object Segmenter {
                 ) {
                     return@withContext SegmentResult(status = "noSubject", width = 0, height = 0)
                 }
-                val cropped = Bitmap.createBitmap(
+                val crop = Bitmap.createBitmap(
                     foreground, bounds.left, bounds.top, bounds.width(), bounds.height(),
                 )
-                FileOutputStream(File(outPath)).use { cropped.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                cropped = crop
+                FileOutputStream(File(outPath)).use { crop.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 SegmentResult(
                     status = "ok",
                     path = outPath,
-                    width = cropped.width.toLong(),
-                    height = cropped.height.toLong(),
+                    width = crop.width.toLong(),
+                    height = crop.height.toLong(),
                 )
             } catch (e: MlKitException) {
                 Log.w(TAG, "Segmentation failed", e)
@@ -81,6 +85,9 @@ object Segmenter {
                 SegmentResult(status = "error", width = 0, height = 0)
             } finally {
                 client.close()
+                if (cropped !== foreground) cropped?.recycle()
+                foreground?.recycle()
+                bitmap.recycle()
             }
         }
 
@@ -141,7 +148,9 @@ object BitmapLoader {
             matrix.postScale(s, s)
         }
         if (matrix.isIdentity) return decoded
-        return Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+        val out = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+        if (out !== decoded) decoded.recycle()
+        return out
     }
 
     fun scaleTo(bitmap: Bitmap, maxSide: Int): Bitmap {

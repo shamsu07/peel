@@ -81,14 +81,14 @@ class _PeelingScreenState extends ConsumerState<PeelingScreen>
       final result = await native.segmentSubject(
         widget.imagePath,
         outPath,
-        1600,
+        1280,
       );
       status = result.status;
       if (result.status == 'ok' && result.path != null) {
-        cutout = await decodeImage(
-          await File(result.path!).readAsBytes(),
-          maxSide: 1280,
-        );
+        final file = File(result.path!);
+        cutout = await decodeImage(await file.readAsBytes(), maxSide: 1280);
+        // The PNG has done its job; don't leave it in temp.
+        file.delete().ignore();
         edged = await PhotoComposition.buildEdged(cutout);
       }
     } catch (_) {
@@ -96,6 +96,7 @@ class _PeelingScreenState extends ConsumerState<PeelingScreen>
     }
     if (!mounted || _skipped) {
       cutout?.dispose();
+      edged?.$1.dispose();
       return;
     }
     _finish(cutout, status, edged);
@@ -114,6 +115,10 @@ class _PeelingScreenState extends ConsumerState<PeelingScreen>
             composition: PhotoComposition(
               original: original,
               cutout: cutout,
+              // The white edge drawn once, so framing draws one image
+              // per frame instead of 25.
+              edgedCutout: edged?.$1,
+              edgePad: edged?.$2 ?? 0,
               mode: cutout == null ? CutMode.whole : CutMode.cutout,
             ),
           ),

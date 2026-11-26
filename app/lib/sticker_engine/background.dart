@@ -41,6 +41,9 @@ class FramesDirSource implements FrameSource {
 
   @override
   Future<Uint8List> frameAt(Duration t) async {
+    // Checked per frame so a cancel stops the encoder cleanly, freeing its
+    // native memory, instead of killing the isolate mid-encode.
+    if (_encodeCancelled) throw const CancelledEncode();
     final i = math.min(frameCount - 1, (t.inMilliseconds * fps / 1000).round());
     final name = 'frame_${i.toString().padLeft(5, '0')}.rgba';
     final frame = await File('$dir/$name').readAsBytes();
@@ -73,6 +76,9 @@ class VideoEncodeProgress {
   final double fraction;
 }
 
+/// Set inside the encode isolate when the user cancels.
+bool _encodeCancelled = false;
+
 /// A running video encode: watch [progress], await [result], or [cancel].
 class VideoEncodeJob {
   VideoEncodeJob._(this._isolate, this.result, this.progress, this._port);
@@ -81,10 +87,22 @@ class VideoEncodeJob {
   final ReceivePort _port;
   final Future<AnimatedResult> result;
   final Stream<VideoEncodeProgress> progress;
+  SendPort? _control;
 
+  /// Asks the encoder to stop at the next frame (so it frees its memory),
+  /// and kills it if it hasn't stopped within two seconds.
   void cancel() {
-    _isolate.kill(priority: Isolate.immediate);
-    _port.close();
+    final control = _control;
+    if (control == null) {
+      _isolate.kill(priority: Isolate.immediate);
+      _port.close();
+      return;
+    }
+    control.send('cancel');
+    Timer(const Duration(seconds: 2), () {
+      _isolate.kill(priority: Isolate.immediate);
+      _port.close();
+    });
   }
 }
 
@@ -93,19 +111,40 @@ Future<VideoEncodeJob> startVideoEncode(VideoEncodeRequest request) async {
   final progress = StreamController<VideoEncodeProgress>.broadcast();
   final done = Completer<AnimatedResult>();
 
-  final isolate = await Isolate.spawn(_videoEncodeEntry, [
-    port.sendPort,
-    request.framesDir,
-    request.frameCount,
-    request.fps,
-    request.duration.inMilliseconds,
-    TransferableTypedData.fromList([request.layers.overlay]),
-    TransferableTypedData.fromList([request.layers.mask]),
-  ]);
+  final isolate = await Isolate.spawn(
+    _videoEncodeEntry,
+    [
+      port.sendPort,
+      request.framesDir,
+      request.frameCount,
+      request.fps,
+      request.duration.inMilliseconds,
+      TransferableTypedData.fromList([request.layers.overlay]),
+      TransferableTypedData.fromList([request.layers.mask]),
+    ],
+    // If the isolate dies (e.g. out of memory), say so instead of hanging.
+    onExit: port.sendPort,
+    onError: port.sendPort,
+  );
+  late final VideoEncodeJob job;
+
+  void fail(String why) {
+    if (!done.isCompleted) done.completeError(CompressionException(why));
+    if (!progress.isClosed) progress.close();
+    port.close();
+  }
 
   port.listen(
     (message) {
-      if (message is List && message.first == 'progress') {
+      if (message == null) {
+        fail('The encoder stopped unexpectedly');
+      } else if (message is List && message.first == 'control') {
+        job._control = message[1] as SendPort;
+      } else if (message is List && message.first == 'cancelled') {
+        if (!done.isCompleted) done.completeError(const CancelledEncode());
+        if (!progress.isClosed) progress.close();
+        port.close();
+      } else if (message is List && message.first == 'progress') {
         progress.add(
           VideoEncodeProgress(message[1] as int, message[2] as double),
         );
@@ -125,9 +164,9 @@ Future<VideoEncodeJob> startVideoEncode(VideoEncodeRequest request) async {
         progress.close();
         port.close();
       } else if (message is List && message.first == 'error') {
-        done.completeError(CompressionException(message[1] as String));
-        progress.close();
-        port.close();
+        fail(message[1] as String);
+      } else if (message is List && message.length == 2) {
+        fail('Encoder error: ${message[0]}'); // From onError.
       }
     },
     onDone: () {
@@ -136,7 +175,8 @@ Future<VideoEncodeJob> startVideoEncode(VideoEncodeRequest request) async {
     },
   );
 
-  return VideoEncodeJob._(isolate, done.future, progress.stream, port);
+  job = VideoEncodeJob._(isolate, done.future, progress.stream, port);
+  return job;
 }
 
 class CancelledEncode implements Exception {
@@ -145,6 +185,11 @@ class CancelledEncode implements Exception {
 
 Future<void> _videoEncodeEntry(List<Object?> args) async {
   final reply = args[0]! as SendPort;
+  final control = ReceivePort();
+  control.listen((m) {
+    if (m == 'cancel') _encodeCancelled = true;
+  });
+  reply.send(['control', control.sendPort]);
   try {
     final source = FramesDirSource(
       dir: args[1]! as String,
@@ -178,8 +223,12 @@ Future<void> _videoEncodeEntry(List<Object?> args) async {
       result.attempts,
       result.elapsed.inMilliseconds,
     ]);
+  } on CancelledEncode {
+    reply.send(['cancelled']);
   } catch (e) {
     reply.send(['error', '$e']);
+  } finally {
+    control.close();
   }
 }
 
