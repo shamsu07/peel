@@ -157,12 +157,25 @@ class _ReadyScreenState extends ConsumerState<ReadyScreen> {
                     children: [
                       Expanded(
                         child: SecondaryPillButton(
-                          label: 'Save to Photos',
+                          label: 'Save',
                           leading: const Icon(Icons.download_rounded, size: 18),
                           onPressed: () => saveToPhotos(context, ref, record),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
+                      // Copy, then paste into a WhatsApp chat: one sticker,
+                      // no pack (tested on iPhone, 27 Nov 2026).
+                      Expanded(
+                        child: SecondaryPillButton(
+                          label: 'Copy',
+                          leading: const Icon(
+                            Icons.content_copy_rounded,
+                            size: 18,
+                          ),
+                          onPressed: () => copySticker(context, ref, record),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: SecondaryPillButton(
                           label: 'Share',

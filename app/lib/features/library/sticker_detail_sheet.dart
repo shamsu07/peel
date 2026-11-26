@@ -162,6 +162,13 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
                   sendToWhatsApp(widget.host, ref, r, openSentScreen: false);
                 },
               ),
+            _Row(
+              icon: Icons.content_copy_rounded,
+              iconBackground: PeelPairs.lilac.fill,
+              iconColor: PeelPairs.lilac.ink,
+              label: 'Copy sticker',
+              onTap: () => copySticker(context, ref, r),
+            ),
             if (r.handoffVideo != null)
               _Row(
                 icon: Icons.volume_up_rounded,
@@ -187,13 +194,6 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
               iconColor: PeelPairs.sky.ink,
               label: shareLabel(r),
               onTap: () => shareSticker(ref, r),
-            ),
-            _Row(
-              icon: Icons.content_copy_rounded,
-              iconBackground: PeelPairs.lilac.fill,
-              iconColor: PeelPairs.lilac.ink,
-              label: 'Copy sticker',
-              onTap: () => copySticker(context, ref, r),
             ),
             Divider(color: PeelColors.paper, height: 12),
             _Row(

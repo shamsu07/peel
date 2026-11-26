@@ -6,7 +6,7 @@ Goal (spec §11): prove the risky parts on real devices before building screens.
 |---|---|---|
 | 1 | Any 0.5–10 s clip → animated WebP ≤ 480 KB, fast enough on a low-end Android phone | **✅ iPhone 15 Pro: worst case 6.2 s.** Still needs a low-end Android run (Q-E3) |
 | 2 | 1 sticker + 2 bonus pack is accepted; adding more updates WhatsApp (Q-E2, Q-E5) | **iOS: ✅ accepted, ❌ no updates (a re-send adds a duplicate pack).** Android not yet tested |
-| 3 | Single-file route via WhatsApp's Create sticker (Q-E6) | Not started |
+| 3 | Single-file route via WhatsApp's Create sticker (Q-E6) | **iOS: ✅ Copy sticker → paste in a chat arrives as a sticker** (no pack). Animated paste and Android not yet tested |
 | 4 | MP4 hand-off keeps its sound in WhatsApp's Create sticker | Not started |
 
 ## 26 Nov 2026: WebP engine
@@ -94,3 +94,11 @@ The worst-case clip is harsher than real footage, because it has new random nois
 **Impact:** the spec's plan of one hidden rolling pack updated on every send works only if Android updates packs (still to test). On iOS every send creates a new pack in WhatsApp, so the "one sticker → send" flow needs a different design on iOS. Options are under review (see the conversation, 26 Nov).
 
 **Lab redesign:** the WhatsApp section now has a Still/Moving switch, one card showing the pack's real stickers (bonus ones tagged), "Make a test sticker", "Send to WhatsApp", an iPhone warning before a duplicate send, and "Clear test packs".
+
+## 27 Nov 2026: one sticker without a pack (iPhone 15 Pro)
+
+- ✅ **Copy sticker, then paste into a WhatsApp chat, sends it as a real sticker.** Peel puts the WebP (as `org.webmproject.webp` and `public.webp`) plus a PNG fallback on the pasteboard. This is the first route that sends a single sticker without a pack or bonus stickers.
+- ❌ **Sharing through the share sheet does not.** WhatsApp on iPhone treats any shared image as a photo and fills transparent areas with black. Peel now shares photo stickers on white there ("Share as image"), and stickers with sound as their video with the sound.
+- Still to test: pasting a moving (animated) sticker, and the same route on Android.
+
+**Impact:** Copy is now a first-class action on the Ready screen (Save · Copy · Share) and sits second in sticker details, right after Send to WhatsApp.
