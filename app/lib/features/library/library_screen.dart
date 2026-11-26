@@ -12,13 +12,15 @@ import '../../core/widgets/pill_buttons.dart';
 import '../../library/sticker_record.dart';
 import '../../sticker_engine/sticker_check.dart';
 import '../../whatsapp/exporter.dart';
+import '../../whatsapp/pack_models.dart';
 import '../create/start.dart';
 import '../export/pack_picker.dart';
 import '../export/sticker_image.dart';
 import 'sticker_detail_sheet.dart';
 
 /// "My stickers." Home once the user has made a sticker (canvas: Home · my
-/// stickers). Packs are never shown; only stickers.
+/// stickers). Packs sit in a row on top (tap one to see just its
+/// stickers); below, every sticker, grouped by when it was made.
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key, required this.stickers});
 
@@ -30,6 +32,36 @@ class LibraryScreen extends ConsumerStatefulWidget {
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   bool _sending = false;
+  List<PackEntry> _packs = const [];
+
+  /// The pack being looked at, or null for all stickers.
+  String? _packFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPacks();
+  }
+
+  @override
+  void didUpdateWidget(LibraryScreen old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.stickers, widget.stickers)) _loadPacks();
+  }
+
+  /// Packs in WhatsApp that hold at least one of the user's stickers.
+  Future<void> _loadPacks() async {
+    final store = await ref.read(packStoreProvider.future);
+    final ids = {for (final r in widget.stickers) r.packIdentifier};
+    final packs = (await store.load()).packs.reversed
+        .where((p) => p.inWhatsApp && ids.contains(p.identifier))
+        .toList();
+    if (!mounted) return;
+    setState(() {
+      _packs = packs;
+      if (!packs.any((p) => p.identifier == _packFilter)) _packFilter = null;
+    });
+  }
 
   Future<void> _sendNew(List<StickerRecord> unsent) async {
     setState(() => _sending = true);
@@ -70,6 +102,77 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       case null:
         break;
     }
+  }
+
+  /// The sticker grid: one pack's stickers when a pack is picked,
+  /// otherwise all of them under date headings.
+  List<Widget> _stickerSections(List<StickerRecord> stickers) {
+    final filter = _packFilter;
+    if (filter != null) {
+      final pack = _packs.firstWhere((p) => p.identifier == filter);
+      return [
+        _SectionLabel(
+          pack.name,
+          action: TextButton(
+            onPressed: () => setState(() => _packFilter = null),
+            child: const Text('Show all'),
+          ),
+        ),
+        _grid(stickers.where((r) => r.packIdentifier == filter).toList()),
+      ];
+    }
+    final groups = <String, List<StickerRecord>>{};
+    final now = DateTime.now();
+    for (final r in stickers) {
+      groups.putIfAbsent(_whenLabel(r.createdAt, now), () => []).add(r);
+    }
+    return [
+      for (final e in groups.entries) ...[
+        _SectionLabel(e.key),
+        _grid(e.value),
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+      ],
+    ];
+  }
+
+  Widget _grid(List<StickerRecord> records) => SliverPadding(
+    padding: const EdgeInsets.symmetric(horizontal: PeelSpace.gutter),
+    sliver: SliverGrid.count(
+      crossAxisCount: 3,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      children: [
+        for (final r in records)
+          _Tile(record: r, onTap: () => showStickerDetail(context, ref, r)),
+      ],
+    ),
+  );
+
+  static const _months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  /// Today, Yesterday, This week, then the month (and year if not this one).
+  static String _whenLabel(DateTime at, DateTime now) {
+    final day = DateTime(at.year, at.month, at.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final days = today.difference(day).inDays;
+    if (days <= 0) return 'Today';
+    if (days == 1) return 'Yesterday';
+    if (days < 7) return 'This week';
+    final month = _months[at.month - 1];
+    return at.year == now.year ? month : '$month ${at.year}';
   }
 
   @override
@@ -142,26 +245,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ],
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    PeelSpace.gutter,
-                    0,
-                    PeelSpace.gutter,
-                    0,
-                  ),
-                  sliver: SliverGrid.count(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    children: [
-                      for (final r in stickers)
-                        _Tile(
-                          record: r,
-                          onTap: () => showStickerDetail(context, ref, r),
+                if (_packs.isNotEmpty) ...[
+                  const _SectionLabel('Packs'),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 168,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: PeelSpace.gutter,
                         ),
-                    ],
+                        itemCount: _packs.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 10),
+                        itemBuilder: (context, i) {
+                          final p = _packs[i];
+                          return _PackCard(
+                            pack: p,
+                            stickers: stickers
+                                .where((r) => r.packIdentifier == p.identifier)
+                                .toList(),
+                            selected: _packFilter == p.identifier,
+                            onTap: () => setState(
+                              () => _packFilter = _packFilter == p.identifier
+                                  ? null
+                                  : p.identifier,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                ],
+                ..._stickerSections(stickers),
                 const SliverToBoxAdapter(child: SizedBox(height: 140)),
               ],
             ),
@@ -236,17 +352,26 @@ class _SendBar extends StatelessWidget {
           backgroundColor: WhatsAppColors.green,
           foregroundColor: WhatsAppColors.onGreen,
           minimumSize: const Size(0, PeelSpace.minTouch),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.fromLTRB(16, 0, 20, 0),
           shape: const StadiumBorder(),
           textStyle: PeelType.label().copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
         ),
-        child: Text(
-          sending ? 'Sending…' : 'Send $count new to WhatsApp',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.send_rounded, size: 18),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                sending ? 'Sending…' : 'Send $count new to WhatsApp',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -325,6 +450,128 @@ class _Badge extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Icon(icon, size: 14, color: PeelColors.surface),
+    );
+  }
+}
+
+/// A small uppercase heading over a part of the list.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text, {this.action});
+
+  final String text;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        PeelSpace.gutter + 4,
+        8,
+        PeelSpace.gutter,
+        8,
+      ),
+      sliver: SliverToBoxAdapter(
+        child: SizedBox(
+          height: 32,
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    text.toUpperCase(),
+                    style: PeelType.caption().copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ),
+              ?action,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One pack: its first four stickers, its name and how many it holds.
+class _PackCard extends StatelessWidget {
+  const _PackCard({
+    required this.pack,
+    required this.stickers,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final PackEntry pack;
+  final List<StickerRecord> stickers;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = stickers.length;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${pack.name}, $count sticker${count == 1 ? '' : 's'}',
+      excludeSemantics: true,
+      child: Material(
+        color: PeelColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: selected ? PeelColors.ink : PeelColors.surface,
+            width: 2,
+          ),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: SizedBox(
+            width: 132,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 100,
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      mainAxisSpacing: 4,
+                      crossAxisSpacing: 4,
+                      children: [
+                        for (final r in stickers.take(4))
+                          StickerImage(r, size: 48),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    pack.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PeelType.label().copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    '$count sticker${count == 1 ? '' : 's'}',
+                    style: PeelType.caption().copyWith(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
