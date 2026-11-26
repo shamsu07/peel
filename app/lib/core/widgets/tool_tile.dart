@@ -60,36 +60,17 @@ class ToolTile extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 34,
-                  height: 30,
+                SizedBox.square(
+                  dimension: 26,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      Center(child: Icon(icon, size: 26)),
+                      Icon(icon, size: 26),
                       if (badge != ToolBadge.none)
                         Positioned(
-                          right: -2,
-                          top: -2,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: PeelColors.ink,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: PeelColors.surface,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Icon(
-                              badge == ToolBadge.add
-                                  ? Icons.add_rounded
-                                  : Icons.edit_rounded,
-                              size: badge == ToolBadge.add ? 12 : 9,
-                              color: PeelColors.surface,
-                            ),
-                          ),
+                          left: 17,
+                          top: -6,
+                          child: _Badge(badge: badge),
                         ),
                     ],
                   ),
@@ -105,6 +86,40 @@ class ToolTile extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The corner badge: a white ring with an ink dot inside, drawn as two
+/// plain circles so the edge stays crisp.
+class _Badge extends StatelessWidget {
+  const _Badge({required this.badge});
+
+  final ToolBadge badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 18,
+      height: 18,
+      padding: const EdgeInsets.all(2),
+      decoration: const BoxDecoration(
+        color: PeelColors.surface,
+        shape: BoxShape.circle,
+      ),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: PeelColors.ink,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Icon(
+            badge == ToolBadge.add ? Icons.add_rounded : Icons.edit_rounded,
+            size: badge == ToolBadge.add ? 12 : 8,
+            color: PeelColors.surface,
           ),
         ),
       ),
