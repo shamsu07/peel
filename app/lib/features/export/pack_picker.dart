@@ -67,11 +67,9 @@ class _NameSheet extends StatefulWidget {
 }
 
 class _NameSheetState extends State<_NameSheet> {
-  late final _controller = TextEditingController(text: widget.suggested)
-    ..selection = TextSelection(
-      baseOffset: 0,
-      extentOffset: widget.suggested.length,
-    );
+  // Starts empty: the suggested name shows as a faint hint and is used
+  // if nothing is typed.
+  final _controller = TextEditingController();
 
   @override
   void dispose() {
@@ -88,7 +86,7 @@ class _NameSheetState extends State<_NameSheet> {
   Widget build(BuildContext context) {
     return PeelSheet(
       title: 'Name your pack.',
-      subtitle: 'This is the name you’ll see in WhatsApp.',
+      subtitle: 'Type a name, or keep the one shown.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -104,6 +102,9 @@ class _NameSheetState extends State<_NameSheet> {
               filled: true,
               fillColor: PeelColors.paper,
               hintText: widget.suggested,
+              hintStyle: PeelType.label(
+                color: PeelColors.muted.withValues(alpha: 0.55),
+              ).copyWith(fontSize: 18),
               counterText: '',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
