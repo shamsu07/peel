@@ -380,31 +380,130 @@ class _ReadyPillState extends State<ReadyPill> {
   }
 }
 
+/// What a notification is about; picks its little icon.
+enum SnackTone { done, problem, info }
+
+/// Guesses the tone from the wording, so call sites stay simple.
+SnackTone _toneOf(String message) {
+  final m = message.toLowerCase();
+  if (m.startsWith('couldn') ||
+      m.startsWith('something') ||
+      m.contains('didn’t') ||
+      m.startsWith('not added') ||
+      m.contains('isn’t installed') ||
+      m.contains('can’t')) {
+    return SnackTone.problem;
+  }
+  if (m.startsWith('saved') ||
+      m.startsWith('copied') ||
+      m.startsWith('added') ||
+      m.startsWith('sent') ||
+      m.contains('deleted') ||
+      m.contains('copied')) {
+    return SnackTone.done;
+  }
+  return SnackTone.info;
+}
+
+/// A light, helpful notification: soft charcoal, regular-weight text, a
+/// small tinted icon saying what happened, and an optional text action
+/// (e.g. Undo). Closes by itself.
+SnackBar peelSnackBar(
+  String message, {
+  String? actionLabel,
+  VoidCallback? onAction,
+  Duration duration = const Duration(seconds: 3),
+  SnackTone? tone,
+}) {
+  final t = tone ?? _toneOf(message);
+  final (IconData icon, Color fill, Color ink) = switch (t) {
+    SnackTone.done => (
+      Icons.check_rounded,
+      PeelPairs.mint.fill,
+      PeelPairs.mint.ink,
+    ),
+    SnackTone.problem => (
+      Icons.priority_high_rounded,
+      const Color(0xFFFFD4D1),
+      const Color(0xFFB42318),
+    ),
+    SnackTone.info => (
+      Icons.info_rounded,
+      PeelPairs.sky.fill,
+      PeelPairs.sky.ink,
+    ),
+  };
+  return SnackBar(
+    duration: duration,
+    // With a button (e.g. Undo) it would otherwise stay until tapped.
+    persist: false,
+    behavior: SnackBarBehavior.floating,
+    elevation: 0,
+    backgroundColor: PeelColors.dark
+        ? const Color(0xF0303038)
+        : const Color(0xF01E1E24),
+    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+    padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+    shape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(18)),
+    dismissDirection: DismissDirection.down,
+    content: Row(
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
+          child: Icon(icon, size: 16, color: ink),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            message,
+            style: PeelType.body(
+              color: const Color(0xEBFFFFFF),
+            ).copyWith(fontSize: 15, height: 1.3, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
+    ),
+    action: actionLabel == null
+        ? null
+        : SnackBarAction(
+            label: actionLabel,
+            textColor: PeelPairs.butter.fill,
+            onPressed: onAction ?? () {},
+          ),
+  );
+}
+
 void showPeelSnack(
   BuildContext context,
   String message, {
   String? actionLabel,
   VoidCallback? onAction,
-  Duration duration = const Duration(seconds: 4),
+  Duration duration = const Duration(seconds: 3),
+  SnackTone? tone,
 }) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
-      SnackBar(
-        content: Text(message),
+      peelSnackBar(
+        message,
+        actionLabel: actionLabel,
+        onAction: onAction,
         duration: duration,
-        // With a button (e.g. Undo) it would otherwise stay until tapped.
-        persist: false,
-        action: actionLabel == null
-            ? null
-            : SnackBarAction(
-                label: actionLabel,
-                textColor: PeelPairs.butter.fill,
-                onPressed: onAction ?? () {},
-              ),
+        tone: tone,
       ),
+      snackBarAnimationStyle: peelSnackMotion,
     );
 }
+
+/// Rises in gently, leaves quickly.
+const peelSnackMotion = AnimationStyle(
+  duration: Duration(milliseconds: 340),
+  reverseDuration: Duration(milliseconds: 200),
+  curve: Curves.easeOutCubic,
+  reverseCurve: Curves.easeInCubic,
+);
 
 /// The PEEL sticker logo, for the top-left of Home.
 class PeelLogo extends StatelessWidget {

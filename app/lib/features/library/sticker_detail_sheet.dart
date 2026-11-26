@@ -43,17 +43,13 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
     Navigator.of(context).pop();
     messenger.hideCurrentSnackBar();
     final bar = messenger.showSnackBar(
-      SnackBar(
-        content: const Text('Sticker deleted.'),
+      // Closes by itself after 5 s; Undo works until then.
+      peelSnackBar(
+        'Sticker deleted.',
+        actionLabel: 'Undo',
         duration: const Duration(seconds: 5),
-        // Closes by itself; Undo stays available until then.
-        persist: false,
-        action: SnackBarAction(
-          label: 'Undo',
-          textColor: PeelPairs.butter.fill,
-          onPressed: () {},
-        ),
       ),
+      snackBarAnimationStyle: peelSnackMotion,
     );
     // Delete for real only once Undo is no longer possible.
     final container = ProviderScope.containerOf(host, listen: false);

@@ -35,10 +35,10 @@ ThemeData buildPeelTheme() {
       labelLarge: PeelType.button(),
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: PeelColors.ink,
-      contentTextStyle: PeelType.button().copyWith(fontSize: 15),
       behavior: SnackBarBehavior.floating,
-      shape: const StadiumBorder(),
+      actionTextColor: PeelPairs.butter.fill,
+      contentTextStyle: PeelType.body(color: const Color(0xEBFFFFFF))
+          .copyWith(fontSize: 15, fontWeight: FontWeight.w500),
     ),
   );
 }
