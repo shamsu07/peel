@@ -86,6 +86,12 @@ void main() {
 
     expect(find.text('Your peels.'), findsOneWidget);
     expect(find.text('Send to WhatsApp'), findsOneWidget);
+
+    // Sending opens the waiting stickers, all ticked, ready for one pack.
+    await tester.tap(find.text('Send to WhatsApp'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 sticker waiting'), findsOneWidget);
+    expect(find.text('Add 1 to a pack'), findsOneWidget);
     expect(find.text('New sticker'), findsOneWidget);
     expect(find.byIcon(Icons.volume_up_rounded), findsOneWidget);
   });

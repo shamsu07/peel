@@ -13,11 +13,10 @@ import '../../core/widgets/common.dart';
 import '../../core/widgets/pill_buttons.dart';
 import '../../library/sticker_record.dart';
 import '../../sticker_engine/sticker_check.dart';
-import '../../whatsapp/exporter.dart';
 import '../../whatsapp/pack_models.dart';
 import '../create/start.dart';
-import '../export/pack_picker.dart';
 import '../export/sticker_image.dart';
+import 'pending_sheet.dart';
 import 'sticker_detail_sheet.dart';
 
 /// "My stickers." Home once the user has made a sticker (canvas: Home · my
@@ -59,49 +58,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     setState(() => _packs = packs);
   }
 
-  Future<void> _sendNew(List<StickerRecord> unsent) async {
+  Future<void> _sendNew() async {
     setState(() => _sending = true);
-    final exporter = await ref.read(exporterProvider.future);
-    SendResult? last;
-    for (final kind in StickerKind.values) {
-      // Oldest first, at most a full pack at a time.
-      final batch = unsent.reversed
-          .where((r) => r.kind == kind)
-          .take(30)
-          .toList();
-      if (batch.isEmpty) continue;
-      if (!mounted) return;
-      final choice = await choosePack(
-        context,
-        ref,
-        kind: kind,
-        count: batch.length,
-      );
-      if (choice == null) break;
-      last = await exporter.send(
-        batch,
-        packIdentifier: choice.identifier,
-        newPackName: choice.name,
-      );
-      if (!last.ok) break;
-    }
-    await ref.read(libraryProvider.notifier).reload();
-    if (!mounted) return;
-    setState(() => _sending = false);
-    switch (last?.outcome) {
-      case SendOutcome.sent:
-        showPeelSnack(context, 'Sent to WhatsApp.');
-      case SendOutcome.notInstalled:
-        context.push(Routes.noWhatsApp);
-      case SendOutcome.cancelled:
-        showPeelSnack(context, 'Not added. Tap Send to try again.');
-      case SendOutcome.rejected:
-      case SendOutcome.failed:
-        showPeelSnack(context, 'WhatsApp didn’t take them. Please try again.');
-      case SendOutcome.nothingToSend:
-      case null:
-        break;
-    }
+    await sendWaitingStickers(context, ref);
+    if (mounted) setState(() => _sending = false);
   }
 
   /// Every sticker, under date headings.
@@ -224,7 +184,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         _SendBar(
                           count: unsent.length,
                           sending: _sending,
-                          onSend: () => _sendNew(unsent),
+                          onSend: _sendNew,
                         ),
                         const SizedBox(height: 16),
                       ],
@@ -288,7 +248,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       stops: [0, 0.55],
-                      colors: [PeelColors.paper.withValues(alpha: 0), PeelColors.paper],
+                      colors: [
+                        PeelColors.paper.withValues(alpha: 0),
+                        PeelColors.paper,
+                      ],
                     ),
                   ),
                   alignment: Alignment.center,
