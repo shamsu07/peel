@@ -36,6 +36,8 @@
 	<string>Record your voice for a sticker with sound.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Peel saves your stickers and sound-sticker videos to Photos.</string>
+	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Peel uses your photos and videos to make stickers. They never leave your phone.</string>
 	<key>UIApplicationSceneManifest</key>

@@ -73,8 +73,8 @@ Future<void> saveToPhotos(
 ) async {
   final library = await ref.read(libraryStoreProvider.future);
   try {
-    if (!await Gal.hasPermission(toAlbum: true) &&
-        !await Gal.requestPermission(toAlbum: true)) {
+    if (!await Gal.hasPermission() &&
+        !await Gal.requestPermission()) {
       if (context.mounted) {
         showPeelSnack(
           context,
@@ -83,16 +83,19 @@ Future<void> saveToPhotos(
       }
       return;
     }
+    // Saves with add-only access (no album): that needs one "Allow" and
+    // works with Limited Photos access, which album saving would keep
+    // asking about.
     // Stickers with a square video (moving ones, and any with sound) save
     // as that video, sound included: Photos shows an animated WebP as a
     // still, and a picture can't carry sound. Silent stills save as a PNG.
     final video = record.handoffVideo;
     if (video != null && await library.file(video).exists()) {
-      await Gal.putVideo(library.file(video).path, album: 'Peel');
+      await Gal.putVideo(library.file(video).path);
     } else if (record.kind == StickerKind.moving) {
-      await Gal.putImage(library.file(record.webpFile).path, album: 'Peel');
+      await Gal.putImage(library.file(record.webpFile).path);
     } else {
-      await Gal.putImage(library.file(record.previewFile).path, album: 'Peel');
+      await Gal.putImage(library.file(record.previewFile).path);
     }
     if (context.mounted) showPeelSnack(context, 'Saved to Photos.');
   } on GalException catch (e) {
@@ -146,11 +149,11 @@ Future<bool> saveHandoffVideo(
   if (video == null) return false;
   final library = await ref.read(libraryStoreProvider.future);
   try {
-    if (!await Gal.hasPermission(toAlbum: true) &&
-        !await Gal.requestPermission(toAlbum: true)) {
+    if (!await Gal.hasPermission() &&
+        !await Gal.requestPermission()) {
       return false;
     }
-    await Gal.putVideo(library.file(video).path, album: 'Peel');
+    await Gal.putVideo(library.file(video).path);
     return true;
   } on GalException {
     return false;
