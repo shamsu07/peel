@@ -6,8 +6,6 @@ import 'tokens.dart';
 /// Type scale from the design canvas: Inter Tight for all UI, Instrument
 /// Serif italic for text on stickers only.
 ///
-/// TODO(release): bundle the font files under assets/fonts so the app never
-/// fetches fonts at runtime (google_fonts uses bundled files when present).
 abstract final class PeelType {
   /// Tests turn this off so no fonts are fetched over the network.
   static bool useBrandFonts = true;
