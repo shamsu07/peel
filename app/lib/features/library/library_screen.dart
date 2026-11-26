@@ -89,6 +89,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       children: [
         for (final r in records)
           StickerTile(
+            key: ValueKey(r.id),
             record: r,
             onTap: () => showStickerDetail(context, ref, r),
           ),

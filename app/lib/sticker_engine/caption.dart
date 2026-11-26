@@ -91,11 +91,44 @@ class Caption {
       f.style(size: 10, color: PeelColors.onPastel);
     }
     await GoogleFonts.pendingFonts();
+    clearCache(); // Anything recorded before used a stand-in font.
+  }
+
+  /// Recorded captions, newest last. Laying out a caption takes about ten
+  /// text layouts, and previews repaint it on every drag frame, so each
+  /// look is drawn once and replayed.
+  static final _cache = <String, ui.Picture>{};
+  static const _cacheSize = 12;
+
+  /// Drops recorded captions, e.g. once fonts have loaded.
+  static void clearCache() {
+    for (final p in _cache.values) {
+      p.dispose();
+    }
+    _cache.clear();
   }
 
   /// Paints the caption across [size], scaled for a 512 px sticker.
   void paint(ui.Canvas canvas, ui.Size size) {
     if (isEmpty) return;
+    final key =
+        '$text|${font.name}|${color.toARGB32()}|${look.name}|$centerY|'
+        '${size.width}x${size.height}';
+    var picture = _cache.remove(key);
+    if (picture == null) {
+      final recorder = ui.PictureRecorder();
+      _draw(ui.Canvas(recorder), size);
+      picture = recorder.endRecording();
+      if (_cache.length >= _cacheSize) {
+        final oldest = _cache.keys.first;
+        _cache.remove(oldest)!.dispose();
+      }
+    }
+    _cache[key] = picture; // Most recently used goes last.
+    canvas.drawPicture(picture);
+  }
+
+  void _draw(ui.Canvas canvas, ui.Size size) {
     final k = size.width / 512;
     final shown = font.uppercase ? text.toUpperCase() : text;
     final maxWidth = size.width * 0.9;
@@ -113,6 +146,7 @@ class Caption {
     var probe = layout(font.style(size: fontSize, color: color));
     while (probe.width > maxWidth * 0.98 && fontSize > 34 * k) {
       fontSize -= 4 * k;
+      probe.dispose();
       probe = layout(font.style(size: fontSize, color: color));
     }
 
@@ -138,7 +172,8 @@ class Caption {
       canvas.drawRRect(rect.inflate(7 * k), ui.Paint()..color = edge);
       canvas.drawRRect(rect, ui.Paint()..color = color);
       layout(font.style(size: fontSize, color: blockInk))
-          .paint(canvas, topLeft);
+        ..paint(canvas, topLeft)
+        ..dispose();
     } else {
       final stroke = font
           .style(size: fontSize, color: edge)
@@ -150,9 +185,13 @@ class Caption {
               ..strokeJoin = ui.StrokeJoin.round
               ..color = edge,
           );
-      layout(stroke).paint(canvas, topLeft);
-      layout(font.style(size: fontSize, color: color)).paint(canvas, topLeft);
+      layout(stroke)
+        ..paint(canvas, topLeft)
+        ..dispose();
+      // The probe was laid out with the fill style at this size.
+      probe.paint(canvas, topLeft);
     }
+    probe.dispose();
     canvas.restore();
   }
 }

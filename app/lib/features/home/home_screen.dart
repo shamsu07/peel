@@ -22,8 +22,13 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Once there's a sticker, Home becomes "My stickers.".
-    final stickers = ref.watch(libraryProvider).value ?? const [];
+    // Once there's a sticker, Home becomes "Your peels.". While the library
+    // loads, show a blank page rather than flashing the first-run screen.
+    final library = ref.watch(libraryProvider);
+    if (library.isLoading && !library.hasValue) {
+      return Scaffold(backgroundColor: PeelColors.paper);
+    }
+    final stickers = library.value ?? const [];
     if (stickers.isNotEmpty) return LibraryScreen(stickers: stickers);
     return Scaffold(
       body: SafeArea(

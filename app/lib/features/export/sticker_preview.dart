@@ -40,7 +40,9 @@ class StickerPreview extends ConsumerWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned.fill(child: StickerImage(record, size: size)),
+          Positioned.fill(
+            child: StickerImage(record, size: size, animate: true),
+          ),
           if (src != null)
             Positioned(
               left: -4,

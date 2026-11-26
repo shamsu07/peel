@@ -52,7 +52,7 @@ class NoWhatsAppScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               if (record != null)
-                Center(child: StickerImage(record, size: 170)),
+                Center(child: StickerImage(record, size: 170, animate: true)),
               const Spacer(),
               if (record != null) ...[
                 Row(

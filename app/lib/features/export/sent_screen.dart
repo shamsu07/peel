@@ -143,7 +143,10 @@ class _SentScreenState extends ConsumerState<SentScreen>
                 ),
               ),
               const SizedBox(height: 14),
-              _ChatScene(slap: _slap, sticker: StickerImage(record, size: 112)),
+              _ChatScene(
+                slap: _slap,
+                sticker: StickerImage(record, size: 112, animate: true),
+              ),
               const SizedBox(height: 14),
               Text.rich(
                 TextSpan(

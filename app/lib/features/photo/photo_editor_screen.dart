@@ -29,10 +29,12 @@ class PhotoEditorScreen extends ConsumerStatefulWidget {
 
 class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
   bool _saving = false;
+  late final PhotoDraftNotifier _drafts;
 
   @override
   void initState() {
     super.initState();
+    _drafts = ref.read(photoDraftProvider.notifier);
     // Captions paint on a canvas, so wait for their fonts, then repaint.
     Caption.ensureFontsLoaded().then((_) {
       if (mounted) setState(() {});
@@ -105,9 +107,7 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
       );
       await ref.read(libraryProvider.notifier).reload();
       if (!mounted) return;
-      final old = ref.read(photoDraftProvider);
       ref.read(photoDraftProvider.notifier).clear();
-      disposeDraftImages(old);
       context.pushReplacement(Routes.ready(record.id));
     } catch (e, st) {
       await ErrorLog.record('save photo sticker', e, st);
@@ -116,6 +116,13 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
         setState(() => _saving = false);
       }
     }
+  }
+
+  /// Leaving the editor (not just opening Text on top) frees the photo.
+  @override
+  void dispose() {
+    Future.microtask(_drafts.clear);
+    super.dispose();
   }
 
   @override
@@ -380,5 +387,6 @@ class _CompositionPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) => composition.paint(canvas, size);
 
   @override
-  bool shouldRepaint(covariant _CompositionPainter old) => true;
+  bool shouldRepaint(covariant _CompositionPainter old) =>
+      !identical(old.composition, composition);
 }

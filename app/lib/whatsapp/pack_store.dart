@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
@@ -486,37 +487,53 @@ class PackStore {
   }
 
   /// The JSON WhatsApp on iOS reads from the pasteboard (see WhatsApp's
-  /// sample StickerPack.sendToWhatsApp).
+  /// sample StickerPack.sendToWhatsApp). Up to 30 × 500 KB of stickers, so
+  /// it's built on a background isolate and encoded to UTF-8 in one pass.
   Future<Uint8List> iosPayload(PackEntry pack) async {
     final manifest = await load();
-    final tray = await stickerFile(
-      pack.identifier,
-      pack.trayImageFile,
-    ).readAsBytes();
-    final json = <String, Object?>{
+    final dir = packDir(pack.identifier).path;
+    final header = <String, Object?>{
       'identifier': pack.identifier,
       'name': pack.name,
       'publisher': pack.publisher,
-      'tray_image': base64Encode(tray),
       if (pack.animated) 'animated_sticker_pack': true,
       if (manifest.iosAppStoreLink.isNotEmpty)
         'ios_app_store_link': manifest.iosAppStoreLink,
       if (manifest.androidPlayStoreLink.isNotEmpty)
         'android_play_store_link': manifest.androidPlayStoreLink,
-      'stickers': [
-        for (final s in pack.stickers)
-          {
-            'image_data': base64Encode(
-              await stickerFile(pack.identifier, s.imageFile).readAsBytes(),
-            ),
-            'emojis': s.emojis,
-            if (s.accessibilityText.isNotEmpty)
-              'accessibility_text': s.accessibilityText,
-          },
-      ],
     };
-    return Uint8List.fromList(utf8.encode(jsonEncode(json)));
+    final tray = '$dir/${pack.trayImageFile}';
+    final stickers = [
+      for (final s in pack.stickers)
+        (
+          path: '$dir/${s.imageFile}',
+          emojis: s.emojis,
+          accessibilityText: s.accessibilityText,
+        ),
+    ];
+    return Isolate.run(() => _buildIosPayload(header, tray, stickers));
   }
+}
+
+Uint8List _buildIosPayload(
+  Map<String, Object?> header,
+  String trayPath,
+  List<({String path, List<String> emojis, String accessibilityText})> stickers,
+) {
+  final json = <String, Object?>{
+    ...header,
+    'tray_image': base64Encode(File(trayPath).readAsBytesSync()),
+    'stickers': [
+      for (final s in stickers)
+        {
+          'image_data': base64Encode(File(s.path).readAsBytesSync()),
+          'emojis': s.emojis,
+          if (s.accessibilityText.isNotEmpty)
+            'accessibility_text': s.accessibilityText,
+        },
+    ],
+  };
+  return JsonUtf8Encoder().convert(json) as Uint8List;
 }
 
 /// Width and height from a PNG's IHDR chunk, or null if not a PNG.

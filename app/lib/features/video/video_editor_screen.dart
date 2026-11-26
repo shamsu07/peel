@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -150,23 +151,40 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
     }
   }
 
+  static final _noPlayer = ValueNotifier(VideoPlayerValue.uninitialized());
+
   @override
   void dispose() {
+    _voiceSettle?.cancel();
     _player?.removeListener(_onTick);
     _player?.dispose();
     _voice.dispose();
     super.dispose();
   }
 
+  // Trim drags fire many times a second: seek at most one at a time (the
+  // latest position wins) and restart the sound once the drag settles.
+  bool _seeking = false;
+  int? _pendingSeekMs;
+  Timer? _voiceSettle;
+
   void _update(VideoDraft Function(VideoDraft) change, {bool seek = false}) {
     ref.read(videoDraftProvider.notifier).update(change);
-    if (seek) {
-      _player
-          ?.seekTo(
-            Duration(milliseconds: ref.read(videoDraftProvider)!.startMs),
-          )
-          .then((_) => _restartVoice());
+    if (!seek) return;
+    _pendingSeekMs = ref.read(videoDraftProvider)!.startMs;
+    if (!_seeking) _seekLatest();
+    _voiceSettle?.cancel();
+    _voiceSettle = Timer(const Duration(milliseconds: 250), _restartVoice);
+  }
+
+  Future<void> _seekLatest() async {
+    _seeking = true;
+    while (_pendingSeekMs != null && mounted) {
+      final ms = _pendingSeekMs!;
+      _pendingSeekMs = null;
+      await _player?.seekTo(Duration(milliseconds: ms));
     }
+    _seeking = false;
   }
 
   Future<void> _newSound(
@@ -224,9 +242,7 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
                     // Only the preview listens to playback; the rest of the
                     // screen doesn't rebuild on every frame.
                     child: ValueListenableBuilder<VideoPlayerValue>(
-                      valueListenable:
-                          player ??
-                          ValueNotifier(VideoPlayerValue.uninitialized()),
+                      valueListenable: player ?? _noPlayer,
                       builder: (context, value, _) {
                         final playing = value.isPlaying;
                         final posMs = math.max(
@@ -258,7 +274,15 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
                           badge: d.caption == null
                               ? ToolBadge.add
                               : ToolBadge.edit,
-                          onTap: () => context.push(Routes.videoText),
+                          onTap: () async {
+                            // Don't keep playing (and decoding) underneath.
+                            final wasPlaying =
+                                _player?.value.isPlaying ?? false;
+                            await _player?.pause();
+                            if (!context.mounted) return;
+                            await context.push(Routes.videoText);
+                            if (wasPlaying && mounted) await _player?.play();
+                          },
                         ),
                       ),
                       const SizedBox(width: 10),

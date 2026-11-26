@@ -137,9 +137,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             // A quiet sign-off: the logo, faded.
             const Center(
-              child: Opacity(
-                opacity: 0.45,
-                child: ExcludeSemantics(child: PeelLogo(height: 44)),
+              child: ExcludeSemantics(
+                child: PeelLogo(height: 44, opacity: 0.45),
               ),
             ),
             const SizedBox(height: 8),

@@ -406,9 +406,12 @@ void showPeelSnack(
 
 /// The PEEL sticker logo, for the top-left of Home.
 class PeelLogo extends StatelessWidget {
-  const PeelLogo({super.key, this.height = 52});
+  const PeelLogo({super.key, this.height = 52, this.opacity = 1});
 
   final double height;
+
+  /// Faded without an extra layer (cheaper than an Opacity widget).
+  final double opacity;
 
   @override
   Widget build(BuildContext context) {
@@ -418,6 +421,7 @@ class PeelLogo extends StatelessWidget {
       width: height * 95 / 52,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.medium,
+      opacity: opacity == 1 ? null : AlwaysStoppedAnimation(opacity),
       semanticLabel: 'Peel',
     );
   }
