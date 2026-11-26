@@ -10,7 +10,9 @@ import '../../core/routing/routes.dart';
 import '../../core/widgets/common.dart';
 import '../../core/widgets/peel_segmented.dart';
 import '../../core/widgets/pill_buttons.dart';
+import '../../core/widgets/tool_tile.dart';
 import '../../create/drafts.dart';
+import '../../library/sticker_record.dart';
 import '../../create/maker.dart';
 import '../../sticker_engine/caption.dart';
 import '../../sticker_engine/composer.dart';
@@ -259,7 +261,7 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _ToolTile(
+                        child: ToolTile(
                           label: 'White edge',
                           selected: c.whiteEdge,
                           icon: c.whiteEdge
@@ -276,23 +278,31 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: _ToolTile(
-                          label: c.caption == null ? 'Text' : 'Edit text',
+                        child: ToolTile(
+                          label: c.caption == null ? 'Add text' : 'Edit text',
                           selected: c.caption != null,
-                          icon: Icons.title_rounded,
+                          icon: Icons.text_fields_rounded,
+                          badge: c.caption == null
+                              ? ToolBadge.add
+                              : ToolBadge.edit,
                           onTap: () => context.push(Routes.photoText),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: _ToolTile(
+                        child: ToolTile(
                           label: draft.sound == null
-                              ? 'Sound'
-                              : '${(draft.sound!.durationMs / 1000).toStringAsFixed(1)} s',
+                              ? 'Add sound'
+                              : 'Change sound',
                           selected: draft.sound != null,
-                          icon: draft.sound == null
-                              ? Icons.volume_up_outlined
-                              : Icons.graphic_eq_rounded,
+                          icon: switch (draft.sound?.origin) {
+                            null => Icons.volume_up_rounded,
+                            SoundOrigin.recording => Icons.mic_rounded,
+                            _ => Icons.music_note_rounded,
+                          },
+                          badge: draft.sound == null
+                              ? ToolBadge.add
+                              : ToolBadge.edit,
                           onTap: () => draft.sound == null
                               ? _addSound(draft)
                               : _soundOptions(draft),
@@ -369,56 +379,4 @@ class _CompositionPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CompositionPainter old) => true;
-}
-
-class _ToolTile extends StatelessWidget {
-  const _ToolTile({
-    required this.label,
-    required this.selected,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      toggled: selected,
-      child: Material(
-        color: PeelColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: selected ? PeelColors.ink : PeelColors.surface,
-            width: 2,
-          ),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 76),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 26),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: PeelType.caption(color: PeelColors.ink).copyWith(
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

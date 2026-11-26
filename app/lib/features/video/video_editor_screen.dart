@@ -16,6 +16,7 @@ import '../../core/routing/routes.dart';
 import '../../core/widgets/common.dart';
 import '../../core/widgets/peel_segmented.dart';
 import '../../core/widgets/pill_buttons.dart';
+import '../../core/widgets/tool_tile.dart';
 import '../../create/drafts.dart';
 import '../../library/sticker_record.dart';
 import '../../sticker_engine/caption.dart';
@@ -247,11 +248,30 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Center(
-                    child: _TextTool(
-                      hasText: d.caption != null,
-                      onTap: () => context.push(Routes.videoText),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ToolTile(
+                          label: d.caption == null ? 'Add text' : 'Edit text',
+                          icon: Icons.text_fields_rounded,
+                          selected: d.caption != null,
+                          badge: d.caption == null
+                              ? ToolBadge.add
+                              : ToolBadge.edit,
+                          onTap: () => context.push(Routes.videoText),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ToolTile(
+                          label: 'Recenter',
+                          icon: Icons.center_focus_strong_outlined,
+                          onTap: () => _update(
+                            (d) => d.copyWith(crop: centeredCrop(d.info)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
                   _Trimmer(
@@ -895,7 +915,9 @@ class _SoundPanel extends StatelessWidget {
               children: [
                 Expanded(
                   child: SecondaryPillButton(
-                    label: 'Record again',
+                    label: newSound?.origin == SoundOrigin.recording
+                        ? 'Record again'
+                        : 'Record',
                     background: pair.fill,
                     foreground: pair.ink,
                     leading: const Icon(Icons.mic_none_rounded, size: 18),
@@ -905,7 +927,9 @@ class _SoundPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: SecondaryPillButton(
-                    label: 'Pick a file',
+                    label: newSound?.origin == SoundOrigin.file
+                        ? 'Pick another'
+                        : 'Pick a file',
                     background: pair.fill,
                     foreground: pair.ink,
                     leading: const Icon(Icons.music_note_outlined, size: 18),
@@ -915,45 +939,6 @@ class _SoundPanel extends StatelessWidget {
               ],
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-/// The text tool: a small "Aa Add text" pill under the preview.
-class _TextTool extends StatelessWidget {
-  const _TextTool({required this.hasText, required this.onTap});
-
-  final bool hasText;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const pair = PeelPairs.butter;
-    return FilledButton(
-      onPressed: onTap,
-      style: FilledButton.styleFrom(
-        backgroundColor: pair.fill,
-        foregroundColor: pair.ink,
-        minimumSize: const Size(0, PeelSpace.minTouch),
-        padding: const EdgeInsets.fromLTRB(14, 0, 18, 0),
-        shape: const StadiumBorder(),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Aa',
-            style: PeelType.label(color: pair.ink)
-                .copyWith(fontSize: 16, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            hasText ? 'Edit text' : 'Add text',
-            style: PeelType.label(color: pair.ink)
-                .copyWith(fontSize: 15, fontWeight: FontWeight.w700),
-          ),
         ],
       ),
     );
