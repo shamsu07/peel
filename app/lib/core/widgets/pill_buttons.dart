@@ -42,19 +42,25 @@ class SecondaryPillButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.leading,
+    this.background = PeelColors.surface,
+    this.foreground = PeelColors.ink,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final Widget? leading;
 
+  /// White by default; pass a tint when the button sits on a white card.
+  final Color background;
+  final Color foreground;
+
   @override
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: PeelColors.surface,
-        foregroundColor: PeelColors.ink,
+        backgroundColor: background,
+        foregroundColor: foreground,
         minimumSize: const Size.fromHeight(48),
         shape: const StadiumBorder(),
         textStyle: PeelType.button(color: PeelColors.ink)

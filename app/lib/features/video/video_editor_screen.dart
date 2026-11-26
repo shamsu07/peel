@@ -210,21 +210,7 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
                   16,
                 ),
                 children: [
-                  PeelHeader(
-                    title: 'Video sticker',
-                    trailing: TextButton(
-                      onPressed: () => context.push(Routes.videoText),
-                      style: TextButton.styleFrom(
-                        foregroundColor: PeelColors.ink,
-                        minimumSize: const Size(0, PeelSpace.minTouch),
-                      ),
-                      child: Text(
-                        d.caption == null ? 'Text' : 'Edit text',
-                        style: PeelType.button(color: PeelColors.ink)
-                            .copyWith(fontSize: 15),
-                      ),
-                    ),
-                  ),
+                  const PeelHeader(title: 'Video sticker'),
                   const SizedBox(height: 14),
                   Center(
                     // Only the preview listens to playback; the rest of the
@@ -266,6 +252,11 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
                   ),
                   const SizedBox(height: 14),
                   _QualityRow(quality: quality),
+                  const SizedBox(height: 14),
+                  _TextCard(
+                    caption: d.caption?.text,
+                    onTap: () => context.push(Routes.videoText),
+                  ),
                   if (quality == StickerQuality.squeezed &&
                       _lengthBeforeShorten == null) ...[
                     const SizedBox(height: 12),
@@ -895,6 +886,8 @@ class _SoundPanel extends StatelessWidget {
                 Expanded(
                   child: SecondaryPillButton(
                     label: 'Record again',
+                    background: pair.fill,
+                    foreground: pair.ink,
                     leading: const Icon(Icons.mic_none_rounded, size: 18),
                     onPressed: onRecordAgain,
                   ),
@@ -903,6 +896,8 @@ class _SoundPanel extends StatelessWidget {
                 Expanded(
                   child: SecondaryPillButton(
                     label: 'Pick a file',
+                    background: pair.fill,
+                    foreground: pair.ink,
                     leading: const Icon(Icons.music_note_outlined, size: 18),
                     onPressed: onPickFile,
                   ),
@@ -911,6 +906,76 @@ class _SoundPanel extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// "Add text": a big, tinted card so people find the text tool.
+class _TextCard extends StatelessWidget {
+  const _TextCard({required this.caption, required this.onTap});
+
+  /// The current text, if any.
+  final String? caption;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const pair = PeelPairs.butter;
+    final has = caption != null && caption!.trim().isNotEmpty;
+    return Semantics(
+      button: true,
+      label: has ? 'Edit text: $caption' : 'Add text to your sticker',
+      excludeSemantics: true,
+      child: Material(
+        color: pair.fill,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: PeelColors.ink,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    'Aa',
+                    style: PeelType.label(color: pair.fill)
+                        .copyWith(fontSize: 17, fontWeight: FontWeight.w800),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        has ? 'Edit text' : 'Add text',
+                        style: PeelType.label(
+                          color: pair.ink,
+                        ).copyWith(fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        has ? '“$caption”' : 'Sticker fonts and bright colours',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PeelType.caption(color: pair.ink),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: pair.ink),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
