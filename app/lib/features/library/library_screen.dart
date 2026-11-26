@@ -196,15 +196,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   const _SectionLabel('Packs'),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 196,
+                      height: 184,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        // Room below for the cards' shadow.
                         padding: const EdgeInsets.fromLTRB(
                           PeelSpace.gutter,
-                          2,
+                          0,
                           PeelSpace.gutter,
-                          14,
+                          4,
                         ),
                         itemCount: _packs.length,
                         separatorBuilder: (_, _) => const SizedBox(width: 12),
@@ -593,10 +592,11 @@ class _PackCardState extends State<_PackCard> {
             width: _width,
             decoration: ShapeDecoration(
               color: PeelColors.surface,
+              // Flat, like the stickers below: the card's own colour
+              // against the page is enough.
               shape: RoundedSuperellipseBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
-              shadows: PeelShadows.card,
             ),
             padding: const EdgeInsets.all(6),
             child: Column(
