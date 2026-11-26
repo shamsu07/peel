@@ -8,6 +8,7 @@ import 'core/audio.dart';
 import 'core/design/theme.dart';
 import 'core/design/tokens.dart';
 import 'core/error_log.dart';
+import 'core/temp_cleanup.dart';
 import 'core/routing/router.dart';
 import 'sticker_engine/sticker_check.dart';
 
@@ -40,6 +41,9 @@ class _PeelAppState extends ConsumerState<PeelApp> with WidgetsBindingObserver {
   }
 
   Future<void> _warmUp() async {
+    // Let the first screens settle before doing background work.
+    await Future<void>.delayed(const Duration(seconds: 2));
+    sweepTempFiles().ignore();
     try {
       await useSpeakerForPlayback();
       ref.read(nativeProvider).prepareSegmenter();
@@ -50,6 +54,22 @@ class _PeelAppState extends ConsumerState<PeelApp> with WidgetsBindingObserver {
     } catch (e, s) {
       await ErrorLog.record('warm up', e, s);
     }
+  }
+
+  /// Gives memory back when Peel goes to the background or the phone is
+  /// short of memory, so the system is less likely to close it.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) _trimMemory();
+  }
+
+  @override
+  void didHaveMemoryPressure() => _trimMemory();
+
+  void _trimMemory() {
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
   }
 
   /// Follows the phone's light/dark setting while the app is open.
@@ -79,8 +99,26 @@ class _PeelAppState extends ConsumerState<PeelApp> with WidgetsBindingObserver {
         title: 'Peel',
         debugShowCheckedModeBanner: false,
         theme: buildPeelTheme(),
+        scrollBehavior: const PeelScrollBehavior(),
         routerConfig: _router,
       ),
     );
   }
+}
+
+/// The same soft bounce at the ends of every list on both platforms, in
+/// place of Android's stretch, which distorts the whole screen.
+class PeelScrollBehavior extends MaterialScrollBehavior {
+  const PeelScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
 }
