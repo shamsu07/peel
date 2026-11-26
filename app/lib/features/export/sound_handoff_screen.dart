@@ -10,7 +10,6 @@ import '../../core/design/typography.dart';
 import '../../core/routing/routes.dart';
 import '../../core/widgets/common.dart';
 import '../../core/widgets/pill_buttons.dart';
-import '../../library/sticker_record.dart';
 import 'sticker_actions.dart';
 
 /// "Finish it in WhatsApp." The sound version can't be added by apps yet,
@@ -46,11 +45,6 @@ class _SoundHandoffScreenState extends ConsumerState<SoundHandoffScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final record = (ref.watch(libraryProvider).value ?? const [])
-        .where((r) => r.id == widget.id)
-        .firstOrNull;
-    final source = record?.source == StickerSource.video ? 'clip' : 'photo';
-
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -95,80 +89,64 @@ class _SoundHandoffScreenState extends ConsumerState<SoundHandoffScreen> {
                     Semantics(
                       header: true,
                       child: Text(
-                        'Finish it in WhatsApp.',
+                        'Now add\nthe sound.',
                         style: PeelType.title(size: 46),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Your sticker video and its sound are in Photos. '
-                      'WhatsApp turns them into a sound sticker.',
-                      style: PeelType.body(),
                     ),
                     if (_saved == _Saved.failed) ...[
                       const SizedBox(height: 12),
                       PeelNote(
                         pair: PeelPairs.bubblegum,
-                        text:
-                            'We couldn’t save the video to Photos. Allow Peel '
-                            'to add to Photos in Settings, then try again.',
+                        text: 'Couldn’t save the video to Photos.',
                         action: SecondaryPillButton(
                           label: 'Try again',
                           onPressed: _save,
                         ),
                       ),
                     ],
-                    const SizedBox(height: 16),
-                    const _StepCard(
-                      number: 1,
-                      pair: PeelPairs.mint,
-                      title: 'Open a chat and tap the sticker icon',
-                      detail: 'It’s next to the message box.',
-                    ),
-                    _StepCard(
-                      number: 2,
-                      pair: PeelPairs.bubblegum,
-                      title: 'Tap Create sticker and pick the video',
-                      detail:
-                          'It’s the newest one in Photos, made from your $source.',
-                    ),
-                    const _StepCard(
-                      number: 3,
-                      pair: PeelPairs.butter,
-                      title: 'Keep the original sound and send',
-                      detail: 'Friends tap the sticker to hear it.',
-                    ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 20),
+                    // Three steps, one line each.
                     Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: const Color(0xFFC4C4CC),
-                          width: 1.5,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: ShapeDecoration(
+                        color: PeelColors.surface,
+                        shape: RoundedSuperellipseBorder(
+                          borderRadius: BorderRadius.circular(24),
                         ),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
                         children: [
-                          const Icon(
-                            Icons.info_outline_rounded,
-                            size: 18,
-                            color: PeelColors.mutedStrong,
+                          _Step(
+                            number: 1,
+                            pair: PeelPairs.mint,
+                            icon: Icons.emoji_emotions_rounded,
+                            text: 'In a chat, tap the sticker icon',
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'No sound option yet? WhatsApp is still rolling sound '
-                              'stickers out. Update WhatsApp and try again. Your '
-                              'sticker stays saved.',
-                              style: PeelType.caption(
-                                color: PeelColors.mutedStrong,
-                              ).copyWith(height: 1.4),
-                            ),
+                          Divider(height: 1, color: PeelColors.paper),
+                          _Step(
+                            number: 2,
+                            pair: PeelPairs.bubblegum,
+                            icon: Icons.add_photo_alternate_rounded,
+                            text: 'Create sticker, pick the newest video',
+                          ),
+                          Divider(height: 1, color: PeelColors.paper),
+                          _Step(
+                            number: 3,
+                            pair: PeelPairs.butter,
+                            icon: Icons.volume_up_rounded,
+                            text: 'Keep the sound and send',
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'No sound option? WhatsApp is still rolling it out.',
+                      textAlign: TextAlign.center,
+                      style: PeelType.caption(),
                     ),
                   ],
                 ),
@@ -195,66 +173,90 @@ class _SoundHandoffScreenState extends ConsumerState<SoundHandoffScreen> {
   }
 }
 
-class _StepCard extends StatelessWidget {
-  const _StepCard({
+/// One step: a tilted pastel icon tile with its number, and one line.
+class _Step extends StatelessWidget {
+  const _Step({
     required this.number,
     required this.pair,
-    required this.title,
-    required this.detail,
+    required this.icon,
+    required this.text,
   });
 
   final int number;
   final InkPair pair;
-  final String title;
-  final String detail;
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: PeelColors.surface,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          Transform.rotate(
-            angle: (number.isEven ? 4 : -4) * math.pi / 180,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: pair.fill,
-                shape: BoxShape.circle,
-                border: Border.all(color: PeelColors.surface, width: 3),
-                boxShadow: PeelShadows.card,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '$number',
-                style: PeelType.label(color: pair.ink).copyWith(fontSize: 20),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: PeelType.label().copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+    return Semantics(
+      label: 'Step $number: $text',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Transform.rotate(
+              angle: (number.isEven ? 4 : -4) * math.pi / 180,
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: ShapeDecoration(
+                        color: pair.fill,
+                        shape: RoundedSuperellipseBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      child: Icon(icon, size: 24, color: pair.ink),
+                    ),
+                    Positioned(
+                      right: -5,
+                      top: -5,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: PeelColors.ink,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: PeelColors.surface,
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          '$number',
+                          style: TextStyle(
+                            color: PeelColors.surface,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
-                Text(detail, style: PeelType.caption()),
-              ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                text,
+                style: PeelType.label().copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
