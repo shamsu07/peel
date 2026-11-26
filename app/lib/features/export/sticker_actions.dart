@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:share_plus/share_plus.dart';
@@ -9,6 +12,7 @@ import '../../core/routing/routes.dart';
 import '../../core/widgets/common.dart';
 import '../../library/library_store.dart';
 import '../../library/sticker_record.dart';
+import '../../sticker_engine/render.dart';
 import '../../sticker_engine/sticker_check.dart';
 import '../../whatsapp/exporter.dart';
 import 'pack_picker.dart';
@@ -115,10 +119,17 @@ Future<void> shareSticker(WidgetRef ref, StickerRecord record) async {
   final library = await ref.read(libraryStoreProvider.future);
   final video = record.handoffVideo;
   final XFile file;
-  if (record.hasSound &&
-      video != null &&
-      await library.file(video).exists()) {
+  if (record.hasSound && video != null && await library.file(video).exists()) {
     file = XFile(library.file(video).path, mimeType: 'video/mp4');
+  } else if (Platform.isIOS && record.kind == StickerKind.still) {
+    // WhatsApp on iPhone turns any shared image into a photo and fills
+    // the see-through parts with black, so share it on white instead.
+    // (Android sends a shared WebP as a real sticker.)
+    final png = await pngOnWhite(library.file(record.previewFile).path);
+    final tmp = await getTemporaryDirectory();
+    final path = '${tmp.path}/peel_share_${record.id}.png';
+    await File(path).writeAsBytes(png, flush: true);
+    file = XFile(path, mimeType: 'image/png');
   } else {
     file = XFile(library.file(record.webpFile).path, mimeType: 'image/webp');
   }
@@ -129,6 +140,8 @@ Future<void> shareSticker(WidgetRef ref, StickerRecord record) async {
 String shareLabel(StickerRecord record) =>
     record.hasSound && record.handoffVideo != null
     ? 'Share as video with sound'
+    : Platform.isIOS
+    ? 'Share as image'
     : 'Share to another app';
 
 /// Phase 0 test of the iPhone single-sticker route: copy, then paste into a

@@ -127,3 +127,33 @@ Future<ui.Image> _imageFromRgba(Uint8List rgba, int size, {int? height}) async {
   buffer.dispose();
   return frame.image;
 }
+
+/// The sticker PNG at [path] drawn on white, for apps that would fill its
+/// transparent parts with black (WhatsApp on iPhone does, for shared
+/// images).
+Future<Uint8List> pngOnWhite(String path) async {
+  final image = await decodeImage(await File(path).readAsBytes());
+  try {
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    final w = image.width.toDouble();
+    final h = image.height.toDouble();
+    canvas.drawRect(
+      ui.Rect.fromLTWH(0, 0, w, h),
+      ui.Paint()..color = const ui.Color(0xFFFFFFFF),
+    );
+    canvas.drawImage(image, ui.Offset.zero, ui.Paint());
+    final flat = await recorder.endRecording().toImage(
+      image.width,
+      image.height,
+    );
+    try {
+      final png = await flat.toByteData(format: ui.ImageByteFormat.png);
+      return png!.buffer.asUint8List();
+    } finally {
+      flat.dispose();
+    }
+  } finally {
+    image.dispose();
+  }
+}

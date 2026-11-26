@@ -302,6 +302,7 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
     var item: [String: Any] = [:]
     if let webp = FileManager.default.contents(atPath: webpPath) {
       item["org.webmproject.webp"] = webp
+      item["public.webp"] = webp
     }
     if let png = FileManager.default.contents(atPath: pngPath) {
       item[UTType.png.identifier] = png
