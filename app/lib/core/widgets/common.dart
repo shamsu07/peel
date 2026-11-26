@@ -50,7 +50,7 @@ class PeelHeader extends StatelessWidget {
   }
 }
 
-/// The light grey/white grid that shows transparency behind a sticker.
+/// The dark grid that shows transparency behind a sticker.
 class Checkerboard extends StatelessWidget {
   const Checkerboard({super.key, required this.child, this.radius = 28});
 
@@ -59,7 +59,7 @@ class Checkerboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    return ClipRSuperellipse(
       borderRadius: BorderRadius.circular(radius),
       child: CustomPaint(painter: const _CheckerPainter(), child: child),
     );
@@ -71,9 +71,13 @@ class _CheckerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = PeelColors.surface);
+    // Dark in both modes: the sticker's white edge stands out on it.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFF26262C),
+    );
     const cell = 11.0;
-    final grey = Paint()..color = const Color(0xFFF1F1F4);
+    final grey = Paint()..color = const Color(0xFF2F2F36);
     for (var y = 0.0; y < size.height; y += cell) {
       for (var x = 0.0; x < size.width; x += cell) {
         if (((x / cell).floor() + (y / cell).floor()).isOdd) {
@@ -119,9 +123,11 @@ class PeelSheet extends StatelessWidget {
               child: Container(
                 width: 40,
                 height: 5,
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: PeelColors.hairline,
-                  borderRadius: BorderRadius.circular(3),
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(3),
+                  ),
                 ),
               ),
             ),
@@ -149,8 +155,8 @@ class PeelSheet extends StatelessWidget {
                   tooltip: 'Close',
                   icon: const Icon(Icons.close_rounded, size: 20),
                   style: IconButton.styleFrom(
-                    backgroundColor: PeelColors.paper,
-                    foregroundColor: PeelColors.ink,
+                    backgroundColor: PeelColors.closeFill,
+                    foregroundColor: PeelColors.tagRed,
                     fixedSize: const Size.square(PeelSpace.minTouch),
                   ),
                 ),
@@ -171,7 +177,7 @@ Future<T?> showPeelSheet<T>(BuildContext context, WidgetBuilder builder) =>
       isScrollControlled: true,
       backgroundColor: PeelColors.surface,
       barrierColor: const Color(0x6B111113),
-      shape: const RoundedRectangleBorder(
+      shape: const RoundedSuperellipseBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: builder,
@@ -183,7 +189,7 @@ class PeelNote extends StatelessWidget {
     super.key,
     required this.text,
     this.pair = PeelPairs.sky,
-    this.icon = Icons.info_outline_rounded,
+    this.icon = Icons.info_rounded,
     this.action,
   });
 
@@ -196,9 +202,11 @@ class PeelNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: pair.fill,
-        borderRadius: BorderRadius.circular(20),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,9 +244,11 @@ class PeelChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final fg = pair?.ink ?? PeelColors.mutedStrong;
     return DecoratedBox(
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: pair?.fill ?? PeelColors.track,
-        borderRadius: BorderRadius.circular(999),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -295,7 +305,7 @@ class _ReadyPillState extends State<ReadyPill> {
                     width: 24,
                     height: 24,
                     decoration: const BoxDecoration(
-                      color: PeelColors.surface,
+                      color: PeelColors.white,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.check_rounded, size: 16, color: pair.ink),
@@ -327,9 +337,11 @@ class _ReadyPillState extends State<ReadyPill> {
               ? Container(
                   margin: const EdgeInsets.only(top: 10),
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: PeelColors.surface,
-                    borderRadius: BorderRadius.circular(20),
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

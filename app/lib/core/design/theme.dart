@@ -6,19 +6,22 @@ import 'typography.dart';
 /// App-wide Material theme. Most screens draw their own die-cut pieces; the
 /// theme keeps stock widgets (dialogs, text fields, snackbars) on brand.
 ThemeData buildPeelTheme() {
-  const scheme = ColorScheme.light(
+  final dark = PeelColors.dark;
+  final scheme = ColorScheme(
+    brightness: dark ? Brightness.dark : Brightness.light,
     primary: PeelColors.ink,
     onPrimary: PeelColors.surface,
     secondary: PeelColors.electric,
-    onSecondary: PeelColors.surface,
+    onSecondary: PeelColors.white,
     surface: PeelColors.surface,
     onSurface: PeelColors.ink,
-    error: Color(0xFFB42318),
-    onError: PeelColors.surface,
+    error: const Color(0xFFB42318),
+    onError: PeelColors.white,
   );
 
   return ThemeData(
     useMaterial3: true,
+    brightness: dark ? Brightness.dark : Brightness.light,
     colorScheme: scheme,
     scaffoldBackgroundColor: PeelColors.paper,
     splashFactory: InkRipple.splashFactory,

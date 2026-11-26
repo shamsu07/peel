@@ -37,19 +37,21 @@ class DieCutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = RoundedRectangleBorder(
+    final shape = RoundedSuperellipseBorder(
       borderRadius: BorderRadius.circular(radius),
       side: BorderSide(
-        color: PeelColors.surface,
+        color: PeelColors.white,
         width: edge,
         strokeAlign: BorderSide.strokeAlignInside,
       ),
     );
 
     Widget card = DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        boxShadow: PeelShadows.card,
+      decoration: ShapeDecoration(
+        shadows: PeelShadows.card,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(radius),
+        ),
       ),
       child: Material(
         color: color,
@@ -95,11 +97,13 @@ class DieCutTag extends StatelessWidget {
     return Transform.rotate(
       angle: tiltDegrees * math.pi / 180,
       child: DecoratedBox(
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: PeelColors.surface, width: 3),
-          boxShadow: PeelShadows.card,
+          shadows: PeelShadows.card,
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: PeelColors.white, width: 3),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),

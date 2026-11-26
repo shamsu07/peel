@@ -12,8 +12,8 @@ class PrimaryPillButton extends StatelessWidget {
     required this.onPressed,
     this.leading,
     this.trailing,
-    this.background = PeelColors.ink,
-    this.foreground = PeelColors.surface,
+    this.background,
+    this.foreground,
   });
 
   /// A WhatsApp-green button for actions that go to WhatsApp.
@@ -30,20 +30,21 @@ class PrimaryPillButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Widget? leading;
   final Widget? trailing;
-  final Color background;
-  final Color foreground;
+  final Color? background;
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
+    final fg = foreground ?? PeelColors.surface;
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: background,
-        foregroundColor: foreground,
+        backgroundColor: background ?? PeelColors.ink,
+        foregroundColor: fg,
         disabledBackgroundColor: PeelColors.hairline,
         minimumSize: const Size.fromHeight(58),
         shape: const StadiumBorder(),
-        textStyle: PeelType.button(color: foreground),
+        textStyle: PeelType.button(color: fg),
       ),
       child: _PillContent(label: label, leading: leading, trailing: trailing),
     );
@@ -57,8 +58,8 @@ class SecondaryPillButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.leading,
-    this.background = PeelColors.surface,
-    this.foreground = PeelColors.ink,
+    this.background,
+    this.foreground,
   });
 
   final String label;
@@ -66,16 +67,16 @@ class SecondaryPillButton extends StatelessWidget {
   final Widget? leading;
 
   /// White by default; pass a tint when the button sits on a white card.
-  final Color background;
-  final Color foreground;
+  final Color? background;
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: background,
-        foregroundColor: foreground,
+        backgroundColor: background ?? PeelColors.surface,
+        foregroundColor: foreground ?? PeelColors.ink,
         minimumSize: const Size.fromHeight(48),
         shape: const StadiumBorder(),
         textStyle: PeelType.button(color: PeelColors.ink)
@@ -121,13 +122,15 @@ class RoundIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Close buttons are red, so leaving is never mistaken for going on.
+    final close = icon == Icons.close_rounded;
     return IconButton(
       onPressed: onPressed,
       tooltip: tooltip,
       icon: Icon(icon, size: 22),
       style: IconButton.styleFrom(
-        backgroundColor: PeelColors.surface,
-        foregroundColor: PeelColors.ink,
+        backgroundColor: close ? PeelColors.closeFill : PeelColors.surface,
+        foregroundColor: close ? PeelColors.tagRed : PeelColors.ink,
         fixedSize: const Size.square(PeelSpace.minTouch),
       ),
     );

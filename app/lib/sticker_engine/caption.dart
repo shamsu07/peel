@@ -78,17 +78,17 @@ class Caption {
 
   /// Ink for text drawn on a [color] block: dark on light colours.
   Color get blockInk =>
-      color.computeLuminance() > 0.4 ? PeelColors.ink : PeelColors.surface;
+      color.computeLuminance() > 0.4 ? PeelColors.onPastel : PeelColors.white;
 
   /// Outline colour: white, or black when the letters are white.
   Color get edge =>
-      color.toARGB32() == 0xFFFFFFFF ? PeelColors.ink : PeelColors.surface;
+      color.toARGB32() == 0xFFFFFFFF ? PeelColors.onPastel : PeelColors.white;
 
   /// Makes sure the caption fonts are downloaded before painting off-screen.
   static Future<void> ensureFontsLoaded() async {
     if (!PeelType.useBrandFonts) return;
     for (final f in CaptionFont.values) {
-      f.style(size: 10, color: PeelColors.ink);
+      f.style(size: 10, color: PeelColors.onPastel);
     }
     await GoogleFonts.pendingFonts();
   }

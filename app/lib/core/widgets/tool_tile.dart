@@ -45,7 +45,7 @@ class ToolTile extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: PeelColors.surface,
-        shape: RoundedRectangleBorder(
+        shape: RoundedSuperellipseBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
             color: selected ? PeelColors.ink : PeelColors.surface,
@@ -106,12 +106,12 @@ class _Badge extends StatelessWidget {
       width: 18,
       height: 18,
       padding: const EdgeInsets.all(2),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: PeelColors.surface,
         shape: BoxShape.circle,
       ),
       child: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: PeelColors.ink,
           shape: BoxShape.circle,
         ),

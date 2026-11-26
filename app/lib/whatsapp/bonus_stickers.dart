@@ -174,7 +174,7 @@ class DrawnBonusSource implements BonusSource {
         ..color = const ui.Color(0x29111113)
         ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 12),
     );
-    canvas.drawRRect(block.inflate(18), ui.Paint()..color = PeelColors.surface);
+    canvas.drawRRect(block.inflate(18), ui.Paint()..color = PeelColors.white);
     canvas.drawRRect(block, ui.Paint()..color = d.pair.fill);
     canvas.drawParagraph(
       paragraph,

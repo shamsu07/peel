@@ -32,9 +32,11 @@ class PeelSegmented<T> extends StatelessWidget {
       label: semanticLabel,
       container: true,
       child: DecoratedBox(
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: PeelColors.track,
-          borderRadius: BorderRadius.circular(PeelRadii.control),
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(PeelRadii.control),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(4),
@@ -57,10 +59,9 @@ class PeelSegmented<T> extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: isSelected ? PeelColors.surface : const Color(0x00FFFFFF),
-          borderRadius: BorderRadius.circular(PeelRadii.segment),
-          boxShadow: isSelected
+          shadows: isSelected
               ? const [
                   BoxShadow(
                     color: Color(0x1A111113),
@@ -69,6 +70,9 @@ class PeelSegmented<T> extends StatelessWidget {
                   ),
                 ]
               : const [],
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(PeelRadii.segment),
+          ),
         ),
         child: Material(
           type: MaterialType.transparency,

@@ -5,19 +5,47 @@ import 'package:flutter/painting.dart';
 /// Rule of the system: colour comes in pairs. Every pastel has its own dark
 /// ink for line art and text, so colour never relies on black to read.
 abstract final class PeelColors {
-  static const paper = Color(0xFFEEEEF0);
-  static const surface = Color(0xFFFFFFFF);
-  static const ink = Color(0xFF111113);
-  static const muted = Color(0xFF5F5F68);
-  static const mutedStrong = Color(0xFF4A4A52);
-  static const track = Color(0xFFE1E1E5);
-  static const hairline = Color(0xFFD3D3D9);
+  /// True in dark mode. Set by the app from the phone's setting
+  /// (see PeelApp); every colour below follows it.
+  static bool dark = false;
+
+  /// The app background: the warm off-white of a sticker sheet's backing
+  /// paper, or the graphite of the app icon in dark mode.
+  static Color get paper =>
+      dark ? const Color(0xFF17171C) : const Color(0xFFF1EEE9);
+
+  /// Cards and sheets.
+  static Color get surface =>
+      dark ? const Color(0xFF24242B) : const Color(0xFFFFFFFF);
+
+  /// Text, icons and dark buttons. Light in dark mode, so ink buttons turn
+  /// light with dark text.
+  static Color get ink =>
+      dark ? const Color(0xFFF4F2EE) : const Color(0xFF111113);
+  static Color get muted =>
+      dark ? const Color(0xFFA6A6B0) : const Color(0xFF5F5F68);
+  static Color get mutedStrong =>
+      dark ? const Color(0xFFC4C4CC) : const Color(0xFF4A4A52);
+  static Color get track =>
+      dark ? const Color(0xFF30303A) : const Color(0xFFE6E2DC);
+  static Color get hairline =>
+      dark ? const Color(0xFF3B3B45) : const Color(0xFFD8D3CC);
+
+  /// Text and icons on a pastel pair fill, which stays light in both modes.
+  static const onPastel = Color(0xFF111113);
+
+  /// Things that are white whatever the mode: a sticker's die-cut edge.
+  static const white = Color(0xFFFFFFFF);
 
   /// Sticker art and the "new" dot only.
   static const electric = Color(0xFF3D5AFE);
 
-  /// The "NEW" tag only.
+  /// The "NEW" tag and close buttons.
   static const tagRed = Color(0xFFE5383B);
+
+  /// Soft red behind close buttons.
+  static Color get closeFill =>
+      dark ? const Color(0xFF3A2326) : const Color(0xFFFFE3E1);
 }
 
 /// A pastel fill with the dark ink that sits on it.
@@ -120,11 +148,23 @@ abstract final class PeelDieCut {
 }
 
 abstract final class PeelShadows {
-  static const card = [
-    BoxShadow(color: Color(0x1A111113), blurRadius: 22, offset: Offset(0, 10)),
+  static List<BoxShadow> get card => [
+    BoxShadow(
+      color: PeelColors.dark
+          ? const Color(0x66000000)
+          : const Color(0x1A3A2A1A),
+      blurRadius: 22,
+      offset: const Offset(0, 10),
+    ),
   ];
 
-  static const floating = [
-    BoxShadow(color: Color(0x47111113), blurRadius: 26, offset: Offset(0, 12)),
+  static List<BoxShadow> get floating => [
+    BoxShadow(
+      color: PeelColors.dark
+          ? const Color(0x99000000)
+          : const Color(0x47111113),
+      blurRadius: 26,
+      offset: const Offset(0, 12),
+    ),
   ];
 }
