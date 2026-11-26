@@ -37,12 +37,60 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
     });
   }
 
-  Future<void> _addSound(PhotoDraft draft) async {
-    final sound = await showSoundSheet(context, current: draft.sound);
+  Future<void> _addSound(
+    PhotoDraft draft, {
+    SoundStart start = SoundStart.choose,
+  }) async {
+    final sound = await showSoundSheet(
+      context,
+      current: draft.sound,
+      start: start,
+    );
     if (sound == null || !mounted) return;
     ref
         .read(photoDraftProvider.notifier)
         .update((d) => d.copyWith(sound: sound));
+  }
+
+  /// With a sound already added: record again, pick a file, or remove it.
+  Future<void> _soundOptions(PhotoDraft draft) async {
+    final choice = await showPeelSheet<String>(
+      context,
+      (ctx) => PeelSheet(
+        title: 'Sound.',
+        subtitle:
+            '${draft.sound?.label ?? 'Your sound'}, ${((draft.sound?.durationMs ?? 0) / 1000).toStringAsFixed(1)} s',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final (id, icon, label) in const [
+              ('record', Icons.mic_none_rounded, 'Record again'),
+              ('file', Icons.music_note_outlined, 'Pick a file'),
+              ('remove', Icons.delete_outline_rounded, 'Remove sound'),
+            ])
+              ListTile(
+                leading: Icon(icon, color: PeelColors.ink),
+                title: Text(label, style: PeelType.label()),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onTap: () => Navigator.of(ctx).pop(id),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case 'record':
+        await _addSound(draft, start: SoundStart.record);
+      case 'file':
+        await _addSound(draft, start: SoundStart.file);
+      case 'remove':
+        ref
+            .read(photoDraftProvider.notifier)
+            .update((d) => d.copyWith(clearSound: true));
+    }
   }
 
   Future<void> _save(PhotoDraft draft) async {
@@ -235,14 +283,22 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
                           onTap: () => context.push(Routes.photoText),
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _ToolTile(
+                          label: draft.sound == null
+                              ? 'Sound'
+                              : '${(draft.sound!.durationMs / 1000).toStringAsFixed(1)} s',
+                          selected: draft.sound != null,
+                          icon: draft.sound == null
+                              ? Icons.volume_up_outlined
+                              : Icons.graphic_eq_rounded,
+                          onTap: () => draft.sound == null
+                              ? _addSound(draft)
+                              : _soundOptions(draft),
+                        ),
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  SoundCard(
-                    sound: draft.sound,
-                    onAdd: () => _addSound(draft),
-                    onRemove: () =>
-                        notifier.update((d) => d.copyWith(clearSound: true)),
                   ),
                 ],
               ),
