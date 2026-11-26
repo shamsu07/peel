@@ -189,7 +189,7 @@ class _SentScreenState extends ConsumerState<SentScreen>
                           ],
                         ),
                       ),
-                      FilledButton(
+                      FilledButton.icon(
                         onPressed: () => sendToWhatsApp(
                           context,
                           ref,
@@ -197,13 +197,14 @@ class _SentScreenState extends ConsumerState<SentScreen>
                           openSentScreen: false,
                           again: true,
                         ),
+                        icon: const Icon(Icons.send_rounded, size: 16),
+                        label: const Text('Add'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: PeelColors.paper,
-                          foregroundColor: PeelColors.ink,
+                          backgroundColor: WhatsAppColors.green,
+                          foregroundColor: WhatsAppColors.onGreen,
                           minimumSize: const Size(0, PeelSpace.minTouch),
                           shape: const StadiumBorder(),
                         ),
-                        child: const Text('Add'),
                       ),
                     ],
                   ),

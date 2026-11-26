@@ -178,7 +178,7 @@ class _ReadyScreenState extends ConsumerState<ReadyScreen> {
                   const SizedBox(height: 10),
                   PrimaryPillButton.whatsApp(
                     label: _sending ? 'Opening WhatsApp…' : 'Add to WhatsApp',
-                    trailing: const Icon(Icons.north_east_rounded, size: 20),
+                    leading: const Icon(Icons.send_rounded, size: 20),
                     onPressed: _sending
                         ? null
                         : () async {

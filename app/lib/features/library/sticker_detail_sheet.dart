@@ -148,7 +148,7 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
             const SizedBox(height: 8),
             if (!r.sentToWhatsApp)
               _Row(
-                icon: Icons.north_east_rounded,
+                icon: Icons.send_rounded,
                 iconBackground: WhatsAppColors.green,
                 iconColor: WhatsAppColors.onGreen,
                 label: 'Send to WhatsApp',
