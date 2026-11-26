@@ -216,6 +216,9 @@ class _SentScreenState extends ConsumerState<SentScreen>
                   Expanded(
                     child: SecondaryPillButton(
                       label: 'Open WhatsApp',
+                      leading: const Icon(Icons.open_in_new_rounded, size: 18),
+                      background: WhatsAppColors.green,
+                      foreground: WhatsAppColors.onGreen,
                       onPressed: () => ref.read(bridgeProvider).open(),
                     ),
                   ),

@@ -174,9 +174,9 @@ class _SoundHandoffScreenState extends ConsumerState<SoundHandoffScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              PrimaryPillButton(
+              PrimaryPillButton.whatsApp(
                 label: 'Open WhatsApp',
-                trailing: const Icon(Icons.north_east_rounded, size: 20),
+                leading: const Icon(Icons.open_in_new_rounded, size: 20),
                 onPressed: () async {
                   final opened = await ref.read(bridgeProvider).open();
                   if (!opened && context.mounted) {
