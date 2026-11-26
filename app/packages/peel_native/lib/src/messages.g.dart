@@ -646,4 +646,26 @@ class PeelNativeApi {
     ;
     return pigeonVar_replyValue! as bool;
   }
+
+  /// Puts one clipboard item with several representations: each key is a
+  /// type (a UTI on iPhone, e.g. "public.webp", "public.mpeg-4") and each
+  /// value a file holding that representation. For paste experiments.
+  /// Android copies the first file.
+  Future<bool> copyFilesToClipboard(Map<String, String> typeToPath) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.peel_native.PeelNativeApi.copyFilesToClipboard$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[typeToPath]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
 }

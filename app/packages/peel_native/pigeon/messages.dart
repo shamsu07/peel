@@ -144,4 +144,10 @@ abstract class PeelNativeApi {
 
   /// Puts a sticker image on the clipboard (WebP plus a PNG fallback).
   bool copyStickerToClipboard(String webpPath, String pngPath);
+
+  /// Puts one clipboard item with several representations: each key is a
+  /// type (a UTI on iPhone, e.g. "public.webp", "public.mpeg-4") and each
+  /// value a file holding that representation. For paste experiments.
+  /// Android copies the first file.
+  bool copyFilesToClipboard(Map<String, String> typeToPath);
 }

@@ -311,6 +311,16 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
     UIPasteboard.general.setItems([item])
     return true
   }
+
+  func copyFilesToClipboard(typeToPath: [String: String]) throws -> Bool {
+    var item: [String: Any] = [:]
+    for (type, path) in typeToPath {
+      if let data = FileManager.default.contents(atPath: path) { item[type] = data }
+    }
+    guard !item.isEmpty else { return false }
+    UIPasteboard.general.setItems([item])
+    return true
+  }
 }
 
 /// Writes a silent H.264 video that shows one picture for [duration].

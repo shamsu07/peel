@@ -9,6 +9,7 @@ import '../../core/widgets/pill_buttons.dart';
 import '../../sticker_engine/compressor.dart';
 import '../../sticker_engine/sticker_check.dart';
 import 'synthetic_clip.dart';
+import 'paste_lab_section.dart';
 import 'whatsapp_lab_section.dart';
 import '../../core/error_log.dart';
 
@@ -174,6 +175,8 @@ class _EncoderLabScreenState extends State<EncoderLabScreen> {
                 ),
               ),
             for (final run in _runs) _RunCard(run: run),
+            const SizedBox(height: 32),
+            const PasteLabSection(),
             const SizedBox(height: 32),
             const WhatsAppLabSection(),
             const SizedBox(height: 32),

@@ -566,6 +566,11 @@ protocol PeelNativeApi {
   func exportHandoffVideo(job: HandoffJob) async throws -> String
   /// Puts a sticker image on the clipboard (WebP plus a PNG fallback).
   func copyStickerToClipboard(webpPath: String, pngPath: String) throws -> Bool
+  /// Puts one clipboard item with several representations: each key is a
+  /// type (a UTI on iPhone, e.g. "public.webp", "public.mpeg-4") and each
+  /// value a file holding that representation. For paste experiments.
+  /// Android copies the first file.
+  func copyFilesToClipboard(typeToPath: [String: String]) throws -> Bool
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -696,6 +701,25 @@ class PeelNativeApiSetup {
       }
     } else {
       copyStickerToClipboardChannel.setMessageHandler(nil)
+    }
+    /// Puts one clipboard item with several representations: each key is a
+    /// type (a UTI on iPhone, e.g. "public.webp", "public.mpeg-4") and each
+    /// value a file holding that representation. For paste experiments.
+    /// Android copies the first file.
+    let copyFilesToClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.peel_native.PeelNativeApi.copyFilesToClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      copyFilesToClipboardChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let typeToPathArg = args[0] as! [String: String]
+        do {
+          let result = try api.copyFilesToClipboard(typeToPath: typeToPathArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      copyFilesToClipboardChannel.setMessageHandler(nil)
     }
   }
 }
