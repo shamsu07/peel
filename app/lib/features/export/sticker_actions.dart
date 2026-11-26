@@ -146,7 +146,7 @@ String shareLabel(StickerRecord record) =>
 
 /// Phase 0 test of the iPhone single-sticker route: copy, then paste into a
 /// WhatsApp chat.
-Future<void> copySticker(
+Future<bool> copySticker(
   BuildContext context,
   WidgetRef ref,
   StickerRecord record,
@@ -156,7 +156,11 @@ Future<void> copySticker(
       .read(nativeProvider)
       .copyStickerToClipboard(
         library.file(record.webpFile).path,
-        library.file(record.previewFile).path,
+        // A still PNG alongside makes WhatsApp paste a moving sticker as a
+        // still one, so moving stickers go as the WebP alone.
+        record.kind == StickerKind.moving
+            ? ''
+            : library.file(record.previewFile).path,
       );
   if (context.mounted) {
     showPeelSnack(
@@ -166,6 +170,7 @@ Future<void> copySticker(
           : 'Couldn’t copy this sticker.',
     );
   }
+  return ok;
 }
 
 Future<bool> saveHandoffVideo(

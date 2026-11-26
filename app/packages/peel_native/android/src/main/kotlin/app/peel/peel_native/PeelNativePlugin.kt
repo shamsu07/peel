@@ -47,5 +47,10 @@ class PeelNativePlugin : FlutterPlugin, PeelNativeApi {
         HandoffExporter.export(context, job)
 
     override fun copyStickerToClipboard(webpPath: String, pngPath: String): Boolean =
-        ClipboardTools.copy(context, pngPath)
+        // The WebP is the sticker itself (and keeps animation); WhatsApp on
+        // Android treats a WebP as a sticker.
+        ClipboardTools.copy(context, webpPath)
+
+    override fun copyFilesToClipboard(typeToPath: Map<String, String>): Boolean =
+        typeToPath.values.firstOrNull()?.let { ClipboardTools.copy(context, it) } ?: false
 }

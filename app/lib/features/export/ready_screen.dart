@@ -13,6 +13,7 @@ import '../../core/widgets/pill_buttons.dart';
 import '../../sticker_engine/sticker_check.dart';
 import 'bonus_preview.dart';
 import 'sticker_actions.dart';
+import 'copy_sticker_button.dart';
 import 'sticker_preview.dart';
 
 /// "It’s ready." (canvas: Ready).
@@ -102,7 +103,22 @@ class _ReadyScreenState extends ConsumerState<ReadyScreen> {
                           alignment: Alignment.topCenter,
                           child: Transform.rotate(
                             angle: -4 * math.pi / 180,
-                            child: StickerPreview(record, size: 196),
+                            child: SizedBox.square(
+                              dimension: 196,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  StickerPreview(record, size: 196),
+                                  // Copy sits on the sticker it copies;
+                                  // paste it into a chat to send just this.
+                                  Positioned(
+                                    top: -6,
+                                    right: -6,
+                                    child: CopyStickerButton(record: record),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -157,25 +173,12 @@ class _ReadyScreenState extends ConsumerState<ReadyScreen> {
                     children: [
                       Expanded(
                         child: SecondaryPillButton(
-                          label: 'Save',
+                          label: 'Save to Photos',
                           leading: const Icon(Icons.download_rounded, size: 18),
                           onPressed: () => saveToPhotos(context, ref, record),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // Copy, then paste into a WhatsApp chat: one sticker,
-                      // no pack (tested on iPhone, 27 Nov 2026).
-                      Expanded(
-                        child: SecondaryPillButton(
-                          label: 'Copy',
-                          leading: const Icon(
-                            Icons.content_copy_rounded,
-                            size: 18,
-                          ),
-                          onPressed: () => copySticker(context, ref, record),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: SecondaryPillButton(
                           label: 'Share',
