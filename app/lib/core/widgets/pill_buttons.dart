@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../design/tokens.dart';
+import '../design/whatsapp_colors.dart';
 import '../design/typography.dart';
 
 /// The one black button per screen: the next step, at the bottom.
@@ -11,24 +12,38 @@ class PrimaryPillButton extends StatelessWidget {
     required this.onPressed,
     this.leading,
     this.trailing,
+    this.background = PeelColors.ink,
+    this.foreground = PeelColors.surface,
   });
+
+  /// A WhatsApp-green button for actions that go to WhatsApp.
+  const PrimaryPillButton.whatsApp({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.leading,
+    this.trailing,
+  }) : background = WhatsAppColors.green,
+       foreground = WhatsAppColors.onGreen;
 
   final String label;
   final VoidCallback? onPressed;
   final Widget? leading;
   final Widget? trailing;
+  final Color background;
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: PeelColors.ink,
-        foregroundColor: PeelColors.surface,
+        backgroundColor: background,
+        foregroundColor: foreground,
         disabledBackgroundColor: PeelColors.hairline,
         minimumSize: const Size.fromHeight(58),
         shape: const StadiumBorder(),
-        textStyle: PeelType.button(),
+        textStyle: PeelType.button(color: foreground),
       ),
       child: _PillContent(label: label, leading: leading, trailing: trailing),
     );

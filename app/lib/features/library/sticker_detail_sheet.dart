@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app_state.dart';
 import '../../core/design/tokens.dart';
+import '../../core/design/whatsapp_colors.dart';
 import '../../core/design/typography.dart';
 import '../../core/routing/routes.dart';
 import '../../core/widgets/common.dart';
@@ -148,8 +149,8 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
             if (!r.sentToWhatsApp)
               _Row(
                 icon: Icons.north_east_rounded,
-                iconBackground: PeelColors.ink,
-                iconColor: PeelColors.surface,
+                iconBackground: WhatsAppColors.green,
+                iconColor: WhatsAppColors.onGreen,
                 label: 'Send to WhatsApp',
                 onTap: () {
                   Navigator.of(context).pop();

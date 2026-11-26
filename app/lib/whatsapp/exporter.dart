@@ -117,22 +117,25 @@ class WhatsAppExporter {
     }
   }
 
-  static SendResult _map(AddPackResult r, String packName) => switch (r.outcome) {
-    AddPackOutcome.added || AddPackOutcome.sentToWhatsApp => SendResult(
-      SendOutcome.sent,
-      packName: packName,
-    ),
-    AddPackOutcome.cancelled => const SendResult(SendOutcome.cancelled),
-    AddPackOutcome.rejected => SendResult(
-      SendOutcome.rejected,
-      message: r.message,
-    ),
-    AddPackOutcome.notInstalled => const SendResult(SendOutcome.notInstalled),
-    AddPackOutcome.invalid => SendResult(
-      SendOutcome.failed,
-      message: r.problems.join(', '),
-    ),
-  };
+  static SendResult _map(AddPackResult r, String packName) =>
+      switch (r.outcome) {
+        AddPackOutcome.added || AddPackOutcome.sentToWhatsApp => SendResult(
+          SendOutcome.sent,
+          packName: packName,
+        ),
+        AddPackOutcome.cancelled => const SendResult(SendOutcome.cancelled),
+        AddPackOutcome.rejected => SendResult(
+          SendOutcome.rejected,
+          message: r.message,
+        ),
+        AddPackOutcome.notInstalled => const SendResult(
+          SendOutcome.notInstalled,
+        ),
+        AddPackOutcome.invalid => SendResult(
+          SendOutcome.failed,
+          message: r.problems.join(', '),
+        ),
+      };
 
   /// The pack that holds [record], if any.
   Future<PackEntry?> packOf(StickerRecord record) async {

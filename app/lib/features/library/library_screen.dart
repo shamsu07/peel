@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app_state.dart';
 import '../../core/design/tokens.dart';
+import '../../core/design/whatsapp_colors.dart';
 import '../../core/design/typography.dart';
 import '../../core/routing/routes.dart';
 import '../../core/widgets/common.dart';
@@ -227,37 +228,25 @@ class _SendBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // One plain action. The blue dot matches the "not sent yet" dot on
-    // each sticker tile.
     return Align(
       alignment: Alignment.centerLeft,
       child: FilledButton(
         onPressed: sending ? null : onSend,
         style: FilledButton.styleFrom(
-          backgroundColor: PeelColors.ink,
-          foregroundColor: PeelColors.surface,
+          backgroundColor: WhatsAppColors.green,
+          foregroundColor: WhatsAppColors.onGreen,
           minimumSize: const Size(0, PeelSpace.minTouch),
-          padding: const EdgeInsets.fromLTRB(16, 0, 20, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           shape: const StadiumBorder(),
           textStyle: PeelType.label().copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: PeelColors.electric,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(sending ? 'Sending…' : 'Send $count new to WhatsApp'),
-          ],
+        child: Text(
+          sending ? 'Sending…' : 'Send $count new to WhatsApp',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

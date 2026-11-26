@@ -163,7 +163,10 @@ class PackStore {
   /// Packs of [kind] already in WhatsApp with room for [room] more of the
   /// user's stickers, newest first. These are the "existing packs" a new
   /// sticker can join.
-  Future<List<PackEntry>> packsInWhatsApp(StickerKind kind, {int room = 1}) async {
+  Future<List<PackEntry>> packsInWhatsApp(
+    StickerKind kind, {
+    int room = 1,
+  }) async {
     final manifest = await load();
     return manifest.packs.reversed
         .where(

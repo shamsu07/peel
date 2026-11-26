@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app_state.dart';
 import '../../core/design/tokens.dart';
+import '../../core/design/whatsapp_colors.dart';
 import '../../core/design/typography.dart';
 import '../../core/routing/routes.dart';
 import '../../core/widgets/common.dart';
@@ -252,18 +253,6 @@ class _SentScreenState extends ConsumerState<SentScreen>
       ),
     );
   }
-}
-
-/// WhatsApp's own colours, for the chat preview and the heading.
-abstract final class WhatsAppColors {
-  static const green = Color(0xFF25D366);
-  static const teal = Color(0xFF008069);
-  static const wallpaper = Color(0xFFEFEAE2);
-  static const outgoing = Color(0xFFD9FDD3);
-  static const tick = Color(0xFF53BDEB);
-  static const meta = Color(0xFF667781);
-  static const text = Color(0xFF111B21);
-  static const mic = Color(0xFF00A884);
 }
 
 /// A WhatsApp chat with the new sticker landing in it.

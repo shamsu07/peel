@@ -27,6 +27,7 @@ class ReadyScreen extends ConsumerStatefulWidget {
 
 class _ReadyScreenState extends ConsumerState<ReadyScreen> {
   bool _sending = false;
+
   /// Bonus stickers that come with it: a sticker that starts a new pack
   /// gets two, so the pack reaches WhatsApp's minimum of three.
   int _bonus = 0;
@@ -175,7 +176,7 @@ class _ReadyScreenState extends ConsumerState<ReadyScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  PrimaryPillButton(
+                  PrimaryPillButton.whatsApp(
                     label: _sending ? 'Opening WhatsApp…' : 'Add to WhatsApp',
                     trailing: const Icon(Icons.north_east_rounded, size: 20),
                     onPressed: _sending
