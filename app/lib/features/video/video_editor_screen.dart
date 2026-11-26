@@ -172,6 +172,10 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
     VideoDraft d, {
     SoundStart start = SoundStart.choose,
   }) async {
+    // Silence the preview while the sound sheet is open, so a recording
+    // doesn't pick up the clip's own sound.
+    final wasPlaying = _player?.value.isPlaying ?? false;
+    await _player?.pause();
     await _voice.pause();
     if (!mounted) return;
     final sound = await showSoundSheet(
@@ -179,7 +183,10 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
       fixedLengthMs: d.lengthMs,
       start: start,
     );
-    if (sound == null) return;
+    if (sound == null) {
+      if (wasPlaying && mounted) await _player?.play();
+      return;
+    }
     _update(
       (d) => d.copyWith(soundMode: VideoSoundMode.replace, newSound: sound),
     );
