@@ -196,14 +196,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   const _SectionLabel('Packs'),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 168,
+                      height: 196,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: PeelSpace.gutter,
+                        // Room below for the cards' shadow.
+                        padding: const EdgeInsets.fromLTRB(
+                          PeelSpace.gutter,
+                          2,
+                          PeelSpace.gutter,
+                          14,
                         ),
                         itemCount: _packs.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 10),
+                        separatorBuilder: (_, _) => const SizedBox(width: 12),
                         itemBuilder: (context, i) {
                           final p = _packs[i];
                           return _PackCard(
@@ -528,8 +532,10 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// One pack: its first four stickers, its name and how many it holds.
-class _PackCard extends StatelessWidget {
+/// One pack, as the cover of a sticker sheet: a pastel panel (its own
+/// colour, so packs are easy to tell apart) with up to three of its
+/// stickers fanned out, then its name and count.
+class _PackCard extends StatefulWidget {
   const _PackCard({
     required this.pack,
     required this.stickers,
@@ -541,57 +547,131 @@ class _PackCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_PackCard> createState() => _PackCardState();
+}
+
+class _PackCardState extends State<_PackCard> {
+  bool _down = false;
+
+  static const _width = 150.0;
+  static const _coverHeight = 118.0;
+
+  /// Same colour for the same pack, every time.
+  InkPair get _pair =>
+      PeelPairs.all[widget.pack.identifier.hashCode.abs() %
+          PeelPairs.all.length];
+
+  /// Where each fanned sticker sits: (dx from centre, dy, tilt°, size).
+  static List<(double, double, double, double)> _fan(int n) => switch (n) {
+    1 => const [(0, 2, -4, 84)],
+    2 => const [(-22, 4, -10, 70), (22, 0, 8, 70)],
+    _ => const [(-34, 8, -14, 60), (34, 8, 12, 60), (0, -2, -2, 70)],
+  };
+
+  @override
   Widget build(BuildContext context) {
+    final stickers = widget.stickers;
     final count = stickers.length;
+    final shown = stickers.take(3).toList();
+    final spots = _fan(shown.length);
+    final more = count - shown.length;
+    final pair = _pair;
+
     return Semantics(
       button: true,
-      label: '${pack.name}, $count sticker${count == 1 ? '' : 's'}',
+      label: '${widget.pack.name}, $count sticker${count == 1 ? '' : 's'}',
       excludeSemantics: true,
-      child: Material(
-        color: PeelColors.surface,
-        shape: RoundedSuperellipseBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: SizedBox(
-            width: 132,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 100,
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      mainAxisSpacing: 4,
-                      crossAxisSpacing: 4,
-                      children: [
-                        for (final r in stickers.take(4))
-                          StickerImage(r, size: 48),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    pack.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: PeelType.label().copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    '$count sticker${count == 1 ? '' : 's'}',
-                    style: PeelType.caption().copyWith(fontSize: 12),
-                  ),
-                ],
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _down = true),
+        onTapCancel: () => setState(() => _down = false),
+        onTapUp: (_) => setState(() => _down = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _down ? 0.95 : 1,
+          duration: const Duration(milliseconds: 120),
+          child: Container(
+            width: _width,
+            decoration: ShapeDecoration(
+              color: PeelColors.surface,
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(24),
               ),
+              shadows: PeelShadows.card,
+            ),
+            padding: const EdgeInsets.all(6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // The cover: pastel panel with the stickers fanned out.
+                Container(
+                  height: _coverHeight,
+                  decoration: ShapeDecoration(
+                    color: pair.fill,
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(19),
+                    ),
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      for (var i = 0; i < shown.length; i++)
+                        Positioned(
+                          left:
+                              (_width - 12) / 2 + spots[i].$1 - spots[i].$4 / 2,
+                          top: (_coverHeight - spots[i].$4) / 2 + spots[i].$2,
+                          child: Transform.rotate(
+                            angle: spots[i].$3 * math.pi / 180,
+                            child: StickerImage(shown[i], size: spots[i].$4),
+                          ),
+                        ),
+                      if (more > 0)
+                        Positioned(
+                          right: 8,
+                          bottom: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: ShapeDecoration(
+                              color: PeelColors.white,
+                              shape: const StadiumBorder(),
+                            ),
+                            child: Text(
+                              '+$more',
+                              style: PeelType.caption(color: pair.ink).copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.pack.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PeelType.label().copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        '$count sticker${count == 1 ? '' : 's'}',
+                        style: PeelType.caption().copyWith(fontSize: 12.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
