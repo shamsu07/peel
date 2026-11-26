@@ -43,6 +43,17 @@ enum CaptionFont {
 /// White outline letters, or text on a bright block.
 enum CaptionLook { outline, block }
 
+/// How big the text starts; long text still shrinks to fit the sticker.
+enum CaptionSize {
+  regular(76),
+  big(100);
+
+  const CaptionSize(this.startPx);
+
+  /// Starting font size on a 512 px sticker.
+  final double startPx;
+}
+
 class Caption {
   const Caption({
     required this.text,
@@ -50,6 +61,7 @@ class Caption {
     this.color = const Color(0xFFFFD60A),
     this.look = CaptionLook.outline,
     this.centerY = 0.84,
+    this.size = CaptionSize.regular,
   });
 
   final String text;
@@ -59,6 +71,7 @@ class Caption {
 
   /// Vertical centre of the caption, 0 (top) – 1 (bottom).
   final double centerY;
+  final CaptionSize size;
 
   bool get isEmpty => text.trim().isEmpty;
 
@@ -68,12 +81,14 @@ class Caption {
     Color? color,
     CaptionLook? look,
     double? centerY,
+    CaptionSize? size,
   }) => Caption(
     text: text ?? this.text,
     font: font ?? this.font,
     color: color ?? this.color,
     look: look ?? this.look,
     centerY: centerY ?? this.centerY,
+    size: size ?? this.size,
   );
 
   /// Ink for text drawn on a [color] block: dark on light colours.
@@ -113,6 +128,7 @@ class Caption {
     if (isEmpty) return;
     final key =
         '$text|${font.name}|${color.toARGB32()}|${look.name}|$centerY|'
+        '${this.size.name}|'
         '${size.width}x${size.height}';
     var picture = _cache.remove(key);
     if (picture == null) {
@@ -142,7 +158,7 @@ class Caption {
     )..layout(maxWidth: maxWidth);
 
     // Shrink long captions so they stay inside the sticker.
-    var fontSize = 76 * k;
+    var fontSize = this.size.startPx * k;
     var probe = layout(font.style(size: fontSize, color: color));
     while (probe.width > maxWidth * 0.98 && fontSize > 34 * k) {
       fontSize -= 4 * k;

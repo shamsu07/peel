@@ -224,6 +224,16 @@ class _TextEditorScreenState extends ConsumerState<TextEditorScreen> {
                     selected: _caption.look,
                     onChanged: (l) => _set(_caption.copyWith(look: l)),
                   ),
+                  const SizedBox(height: 10),
+                  PeelSegmented<CaptionSize>(
+                    semanticLabel: 'Text size',
+                    options: const [
+                      SegmentOption(CaptionSize.regular, 'Regular size'),
+                      SegmentOption(CaptionSize.big, 'Big'),
+                    ],
+                    selected: _caption.size,
+                    onChanged: (v) => _set(_caption.copyWith(size: v)),
+                  ),
                 ],
               ),
             ),
