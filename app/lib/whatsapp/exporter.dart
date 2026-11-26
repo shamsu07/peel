@@ -58,17 +58,22 @@ class WhatsAppExporter {
   Future<List<PackEntry>> packsToJoin(StickerKind kind, {int count = 1}) =>
       packs.packsInWhatsApp(kind, room: count);
 
+  /// The name offered for a new pack of [kind].
+  Future<String> suggestPackName(StickerKind kind) => packs.suggestName(kind);
+
   /// Adds [records] (all one kind) to the pack [packIdentifier], or to a new
-  /// pack when it's null, and sends that pack to WhatsApp.
+  /// pack called [newPackName] when it's null, and sends that pack to
+  /// WhatsApp.
   Future<SendResult> send(
     List<StickerRecord> records, {
     String? packIdentifier,
+    String? newPackName,
   }) async {
     if (records.isEmpty) return const SendResult(SendOutcome.nothingToSend);
     final kind = records.first.kind;
     assert(records.every((r) => r.kind == kind), 'one kind per pack');
     try {
-      final id = packIdentifier ?? await _newPackFor(records);
+      final id = packIdentifier ?? await _newPackFor(records, newPackName);
       for (final r in records) {
         final tray = await trayPngFromImageFile(
           library.file(r.previewFile).path,
@@ -91,7 +96,7 @@ class WhatsAppExporter {
 
   /// A new pack for [records], or the unsent one they were put in by an
   /// earlier try that was cancelled.
-  Future<String> _newPackFor(List<StickerRecord> records) async {
+  Future<String> _newPackFor(List<StickerRecord> records, String? name) async {
     final earlier = records.first.packIdentifier;
     if (earlier != null && records.every((r) => r.packIdentifier == earlier)) {
       final pack = (await packs.load()).packs
@@ -100,10 +105,14 @@ class WhatsAppExporter {
       if (pack != null &&
           !pack.inWhatsApp &&
           pack.userStickers.length == records.length) {
+        final wanted = name?.trim() ?? '';
+        if (wanted.isNotEmpty && wanted != pack.name) {
+          await packs.renamePack(earlier, wanted);
+        }
         return earlier;
       }
     }
-    return (await packs.createPack(records.first.kind)).identifier;
+    return (await packs.createPack(records.first.kind, name: name)).identifier;
   }
 
   /// Sends the pack [record] is in again, e.g. to WhatsApp Business too.

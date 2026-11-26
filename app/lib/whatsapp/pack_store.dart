@@ -179,8 +179,25 @@ class PackStore {
         .toList();
   }
 
-  /// Makes a new, empty pack of [kind] named "My Stickers", "My Stickers 2"…
-  Future<PackEntry> createPack(StickerKind kind) async {
+  /// The name a new pack of [kind] is offered: "My Stickers", then
+  /// "My Stickers 2"… (or "My Video Stickers"…), skipping names in use.
+  Future<String> suggestName(StickerKind kind) async {
+    final taken = (await load()).packs.map((p) => p.name).toSet();
+    final base = kind == StickerKind.still
+        ? 'My Stickers'
+        : 'My Video Stickers';
+    var number = 1;
+    while (taken.contains(number == 1 ? base : '$base $number')) {
+      number++;
+    }
+    return number == 1 ? base : '$base $number';
+  }
+
+  /// Longest pack name we accept (WhatsApp allows 128 characters).
+  static const maxNameLength = 40;
+
+  /// Makes a new, empty pack of [kind], named [name] or the suggested name.
+  Future<PackEntry> createPack(StickerKind kind, {String? name}) async {
     // Tidy up packs that never reached WhatsApp and have nothing left.
     final before = await load();
     final unused = before.packs
@@ -195,18 +212,14 @@ class PackStore {
       androidPlayStoreLink: before.androidPlayStoreLink,
       iosAppStoreLink: before.iosAppStoreLink,
     );
-    final base = kind == StickerKind.still
-        ? 'My Stickers'
-        : 'My Moving Stickers';
-    final taken = manifest.packs.map((p) => p.name).toSet();
-    var number = 1;
-    while (taken.contains(number == 1 ? base : '$base $number')) {
-      number++;
-    }
+    final given = name?.trim() ?? '';
+    final packName = given.isEmpty
+        ? await suggestName(kind)
+        : given.substring(0, given.length.clamp(0, maxNameLength));
     final prefix = kind == StickerKind.still ? 'peel_still_p' : 'peel_moving_p';
     final pack = PackEntry(
       identifier: '$prefix${_clock().microsecondsSinceEpoch}',
-      name: number == 1 ? base : '$base $number',
+      name: packName,
       publisher: publisher,
       kind: kind,
       trayImageFile: trayFileName,
@@ -269,6 +282,21 @@ class PackStore {
     return (pack, fileName);
   }
 
+  /// Renames a pack that hasn't reached WhatsApp yet.
+  Future<void> renamePack(String identifier, String name) async {
+    final manifest = await load();
+    await _save(
+      PackManifest(
+        packs: [
+          for (final p in manifest.packs)
+            p.identifier == identifier ? p.copyWith(name: name) : p,
+        ],
+        androidPlayStoreLink: manifest.androidPlayStoreLink,
+        iosAppStoreLink: manifest.iosAppStoreLink,
+      ),
+    );
+  }
+
   /// Records that WhatsApp accepted the pack.
   Future<void> markInWhatsApp(String identifier) async {
     final manifest = await load();
@@ -300,7 +328,7 @@ class PackStore {
     final manifest = await load();
     final base = kind == StickerKind.still
         ? 'My Stickers'
-        : 'My Moving Stickers';
+        : 'My Video Stickers';
     final prefix = kind == StickerKind.still ? 'peel_still_b' : 'peel_moving_b';
     final number =
         manifest.packs.where((p) => p.identifier.startsWith(prefix)).length + 1;
@@ -400,7 +428,7 @@ class PackStore {
   PackEntry _newPack(StickerKind kind, int number) {
     final base = kind == StickerKind.still
         ? 'My Stickers'
-        : 'My Moving Stickers';
+        : 'My Video Stickers';
     final id = kind == StickerKind.still ? 'peel_still' : 'peel_moving';
     return PackEntry(
       identifier: '${id}_$number',

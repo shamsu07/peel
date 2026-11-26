@@ -174,6 +174,22 @@ void main() {
       });
     });
 
+    testWidgets('a new pack takes the name the user gives it', (tester) async {
+      await tester.runAsync(() async {
+        final clip = SyntheticClip(duration: Duration.zero, detailed: false);
+        previewPng = await pngFromRgba(clip.render(0), 512, 512);
+        final ios = exporter(ios: true);
+        expect(await ios.suggestPackName(StickerKind.still), 'My Stickers');
+        expect(
+          await ios.suggestPackName(StickerKind.moving),
+          'My Video Stickers',
+        );
+        final result = await ios.send([await add()], newPackName: '  Cats  ');
+        expect(result.packName, 'Cats');
+        expect(await ios.suggestPackName(StickerKind.still), 'My Stickers');
+      });
+    });
+
     testWidgets('a cancelled add leaves stickers unsent, and a retry reuses '
         'the same new pack', (tester) async {
       messenger.setMockMethodCallHandler(

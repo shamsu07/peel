@@ -34,7 +34,11 @@ Future<void> sendToWhatsApp(
     if (!context.mounted) return;
     final choice = await choosePack(context, ref, kind: record.kind);
     if (choice == null) return;
-    result = await exporter.send([record], packIdentifier: choice.identifier);
+    result = await exporter.send(
+      [record],
+      packIdentifier: choice.identifier,
+      newPackName: choice.name,
+    );
   }
   await ref.read(libraryProvider.notifier).reload();
   if (!context.mounted) return;
@@ -73,8 +77,7 @@ Future<void> saveToPhotos(
 ) async {
   final library = await ref.read(libraryStoreProvider.future);
   try {
-    if (!await Gal.hasPermission() &&
-        !await Gal.requestPermission()) {
+    if (!await Gal.hasPermission() && !await Gal.requestPermission()) {
       if (context.mounted) {
         showPeelSnack(
           context,
@@ -149,8 +152,7 @@ Future<bool> saveHandoffVideo(
   if (video == null) return false;
   final library = await ref.read(libraryStoreProvider.future);
   try {
-    if (!await Gal.hasPermission() &&
-        !await Gal.requestPermission()) {
+    if (!await Gal.hasPermission() && !await Gal.requestPermission()) {
       return false;
     }
     await Gal.putVideo(library.file(video).path);

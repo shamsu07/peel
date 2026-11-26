@@ -88,7 +88,7 @@ class _SentScreenState extends ConsumerState<SentScreen>
         _packName ??
         (record.kind == StickerKind.still
             ? 'My Stickers'
-            : 'My Moving Stickers');
+            : 'My Video Stickers');
     final status = _status;
     final offerBusiness =
         status != null &&

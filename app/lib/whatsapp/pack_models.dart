@@ -88,13 +88,14 @@ class PackEntry {
   int get bonusCount => stickers.where((s) => s.bonus).length;
 
   PackEntry copyWith({
+    String? name,
     String? trayImageFile,
     int? imageDataVersion,
     List<StickerEntry>? stickers,
     bool? inWhatsApp,
   }) => PackEntry(
     identifier: identifier,
-    name: name,
+    name: name ?? this.name,
     publisher: publisher,
     kind: kind,
     trayImageFile: trayImageFile ?? this.trayImageFile,

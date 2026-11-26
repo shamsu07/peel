@@ -82,7 +82,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         count: batch.length,
       );
       if (choice == null) break;
-      last = await exporter.send(batch, packIdentifier: choice.identifier);
+      last = await exporter.send(
+        batch,
+        packIdentifier: choice.identifier,
+        newPackName: choice.name,
+      );
       if (!last.ok) break;
     }
     await ref.read(libraryProvider.notifier).reload();

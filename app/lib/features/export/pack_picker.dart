@@ -5,17 +5,24 @@ import '../../app_state.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/widgets/common.dart';
+import '../../core/widgets/pill_buttons.dart';
 import '../../sticker_engine/sticker_check.dart';
 import '../../whatsapp/pack_models.dart';
+import '../../whatsapp/pack_store.dart';
 
-/// Where new stickers go: an existing pack, or a new one ([identifier] null).
+/// Where new stickers go: an existing pack, or a new one ([identifier]
+/// null) called [name].
 class PackChoice {
-  const PackChoice(this.identifier);
+  const PackChoice(this.identifier) : name = null;
 
-  const PackChoice.newPack() : identifier = null;
+  const PackChoice.newPack(this.name) : identifier = null;
 
   final String? identifier;
+  final String? name;
 }
+
+/// Picked "New pack" in the list; the name is asked next.
+const _newPack = PackChoice(null);
 
 /// Asks which pack [count] stickers of [kind] should join. Skips the
 /// question (new pack) when there's no pack in WhatsApp to join yet.
@@ -28,16 +35,97 @@ Future<PackChoice?> choosePack(
 }) async {
   final exporter = await ref.read(exporterProvider.future);
   final packs = await exporter.packsToJoin(kind, count: count);
-  if (packs.isEmpty) return const PackChoice.newPack();
+  if (packs.isNotEmpty) {
+    if (!context.mounted) return null;
+    final picked = await showPeelSheet<PackChoice>(
+      context,
+      (_) => _PackSheet(
+        packs: packs,
+        count: count,
+        updatesMakeCopies: exporter.updatesMakeCopies,
+      ),
+    );
+    if (picked == null || !identical(picked, _newPack)) return picked;
+  }
+  final suggested = await exporter.suggestPackName(kind);
   if (!context.mounted) return null;
-  return showPeelSheet<PackChoice>(
+  final name = await showPeelSheet<String>(
     context,
-    (_) => _PackSheet(
-      packs: packs,
-      count: count,
-      updatesMakeCopies: exporter.updatesMakeCopies,
-    ),
+    (_) => _NameSheet(suggested: suggested),
   );
+  return name == null ? null : PackChoice.newPack(name);
+}
+
+/// "Name your pack.": a suggested name, ready to keep or change.
+class _NameSheet extends StatefulWidget {
+  const _NameSheet({required this.suggested});
+
+  final String suggested;
+
+  @override
+  State<_NameSheet> createState() => _NameSheetState();
+}
+
+class _NameSheetState extends State<_NameSheet> {
+  late final _controller = TextEditingController(text: widget.suggested)
+    ..selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: widget.suggested.length,
+    );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _done() {
+    final name = _controller.text.trim();
+    Navigator.of(context).pop(name.isEmpty ? widget.suggested : name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PeelSheet(
+      title: 'Name your pack.',
+      subtitle: 'This is the name you’ll see in WhatsApp.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLength: PackStore.maxNameLength,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _done(),
+            style: PeelType.label().copyWith(fontSize: 18),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: PeelColors.paper,
+              hintText: widget.suggested,
+              counterText: '',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              suffixIcon: IconButton(
+                tooltip: 'Clear',
+                onPressed: _controller.clear,
+                icon: const Icon(Icons.cancel_rounded, color: PeelColors.muted),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          PrimaryPillButton.whatsApp(
+            label: 'Add to WhatsApp',
+            leading: const Icon(Icons.send_rounded, size: 20),
+            onPressed: _done,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PackSheet extends ConsumerWidget {
@@ -89,8 +177,7 @@ class _PackSheet extends ConsumerWidget {
                 title: 'New pack',
                 detail: 'Starts its own pack in WhatsApp',
                 icon: Icons.add_rounded,
-                onTap: () =>
-                    Navigator.of(context).pop(const PackChoice.newPack()),
+                onTap: () => Navigator.of(context).pop(_newPack),
               ),
               if (updatesMakeCopies) ...[
                 const SizedBox(height: 12),
