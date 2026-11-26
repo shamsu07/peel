@@ -108,16 +108,28 @@ Future<void> saveToPhotos(
   }
 }
 
+/// Shares a sticker to another app. A sticker with sound goes as its video
+/// (with the sound): a WebP image can't carry sound, and chat apps turn a
+/// shared WebP into a silent sticker. Others go as the sticker image.
 Future<void> shareSticker(WidgetRef ref, StickerRecord record) async {
   final library = await ref.read(libraryStoreProvider.future);
-  await SharePlus.instance.share(
-    ShareParams(
-      files: [
-        XFile(library.file(record.webpFile).path, mimeType: 'image/webp'),
-      ],
-    ),
-  );
+  final video = record.handoffVideo;
+  final XFile file;
+  if (record.hasSound &&
+      video != null &&
+      await library.file(video).exists()) {
+    file = XFile(library.file(video).path, mimeType: 'video/mp4');
+  } else {
+    file = XFile(library.file(record.webpFile).path, mimeType: 'image/webp');
+  }
+  await SharePlus.instance.share(ShareParams(files: [file]));
 }
+
+/// The label for the share action: says when it shares a video.
+String shareLabel(StickerRecord record) =>
+    record.hasSound && record.handoffVideo != null
+    ? 'Share as video with sound'
+    : 'Share to another app';
 
 /// Phase 0 test of the iPhone single-sticker route: copy, then paste into a
 /// WhatsApp chat.

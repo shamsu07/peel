@@ -46,6 +46,8 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
       SnackBar(
         content: const Text('Sticker deleted.'),
         duration: const Duration(seconds: 5),
+        // Closes by itself; Undo stays available until then.
+        persist: false,
         action: SnackBarAction(
           label: 'Undo',
           textColor: PeelPairs.butter.fill,
@@ -183,7 +185,7 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
               icon: Icons.ios_share_rounded,
               iconBackground: PeelPairs.sky.fill,
               iconColor: PeelPairs.sky.ink,
-              label: 'Share to another app',
+              label: shareLabel(r),
               onTap: () => shareSticker(ref, r),
             ),
             _Row(
