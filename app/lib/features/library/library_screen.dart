@@ -227,59 +227,38 @@ class _SendBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-      decoration: BoxDecoration(
-        color: PeelColors.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: PeelPairs.butter.fill,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.north_east_rounded,
-              size: 18,
-              color: PeelPairs.butter.ink,
-            ),
+    // One plain action. The blue dot matches the "not sent yet" dot on
+    // each sticker tile.
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: FilledButton(
+        onPressed: sending ? null : onSend,
+        style: FilledButton.styleFrom(
+          backgroundColor: PeelColors.ink,
+          foregroundColor: PeelColors.surface,
+          minimumSize: const Size(0, PeelSpace.minTouch),
+          padding: const EdgeInsets.fromLTRB(16, 0, 20, 0),
+          shape: const StadiumBorder(),
+          textStyle: PeelType.label().copyWith(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  count == 1
-                      ? '1 new sticker to send'
-                      : '$count new stickers to send',
-                  style: PeelType.label().copyWith(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  'The rest are already in WhatsApp',
-                  style: PeelType.caption(),
-                ),
-              ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: PeelColors.electric,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-          FilledButton(
-            onPressed: sending ? null : onSend,
-            style: FilledButton.styleFrom(
-              backgroundColor: PeelColors.ink,
-              foregroundColor: PeelColors.surface,
-              minimumSize: const Size(0, PeelSpace.minTouch),
-              shape: const StadiumBorder(),
-            ),
-            child: Text(sending ? 'Sending…' : 'Send'),
-          ),
-        ],
+            const SizedBox(width: 10),
+            Text(sending ? 'Sending…' : 'Send $count new to WhatsApp'),
+          ],
+        ),
       ),
     );
   }

@@ -85,7 +85,7 @@ void main() {
     );
 
     expect(find.text('My stickers.'), findsOneWidget);
-    expect(find.text('1 new sticker to send'), findsOneWidget);
+    expect(find.text('Send 1 new to WhatsApp'), findsOneWidget);
     expect(find.text('New sticker'), findsOneWidget);
     expect(find.byIcon(Icons.volume_up_rounded), findsOneWidget);
   });
