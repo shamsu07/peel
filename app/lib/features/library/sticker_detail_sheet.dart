@@ -93,9 +93,11 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
               child: Container(
                 width: 40,
                 height: 5,
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: PeelColors.hairline,
-                  borderRadius: BorderRadius.circular(3),
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(3),
+                  ),
                 ),
               ),
             ),
@@ -114,7 +116,8 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
                         tooltip: 'Close',
                         onPressed: () => Navigator.of(context).pop(),
                         style: IconButton.styleFrom(
-                          backgroundColor: PeelColors.paper,
+                          backgroundColor: PeelColors.closeFill,
+                          foregroundColor: PeelColors.tagRed,
                           fixedSize: const Size.square(44),
                         ),
                         icon: const Icon(Icons.close_rounded, size: 18),
@@ -161,6 +164,7 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
               _Row(
                 icon: Icons.volume_up_rounded,
                 iconBackground: PeelPairs.butter.fill,
+                iconColor: PeelPairs.butter.ink,
                 label: 'Make the sound version',
                 chevron: true,
                 onTap: () {
@@ -170,28 +174,32 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
               ),
             _Row(
               icon: Icons.download_rounded,
+              iconBackground: PeelPairs.mint.fill,
+              iconColor: PeelPairs.mint.ink,
               label: 'Save to Photos',
               onTap: () => saveToPhotos(context, ref, r),
             ),
             _Row(
               icon: Icons.ios_share_rounded,
+              iconBackground: PeelPairs.sky.fill,
+              iconColor: PeelPairs.sky.ink,
               label: 'Share to another app',
               onTap: () => shareSticker(ref, r),
             ),
             _Row(
               icon: Icons.content_copy_rounded,
+              iconBackground: PeelPairs.lilac.fill,
+              iconColor: PeelPairs.lilac.ink,
               label: 'Copy sticker',
-              detail: 'Then paste it into a chat',
               onTap: () => copySticker(context, ref, r),
             ),
-            const Divider(color: PeelColors.paper, height: 12),
+            Divider(color: PeelColors.paper, height: 12),
             _Row(
-              icon: Icons.delete_outline_rounded,
-              iconBackground: const Color(0xFFFDE7E7),
-              iconColor: const Color(0xFFB42318),
-              labelColor: const Color(0xFFB42318),
+              icon: Icons.delete_rounded,
+              iconBackground: PeelColors.closeFill,
+              iconColor: PeelColors.tagRed,
+              labelColor: PeelColors.tagRed,
               label: 'Delete sticker',
-              detail: 'Also removes it from WhatsApp. You can undo.',
               onTap: _delete,
             ),
           ],
@@ -206,20 +214,18 @@ class _Row extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.detail,
-    this.iconBackground = PeelColors.paper,
-    this.iconColor = PeelColors.ink,
-    this.labelColor = PeelColors.ink,
+    this.iconBackground,
+    this.iconColor,
+    this.labelColor,
     this.chevron = false,
   });
 
   final IconData icon;
   final String label;
-  final String? detail;
   final VoidCallback onTap;
-  final Color iconBackground;
-  final Color iconColor;
-  final Color labelColor;
+  final Color? iconBackground;
+  final Color? iconColor;
+  final Color? labelColor;
   final bool chevron;
 
   @override
@@ -236,11 +242,13 @@ class _Row extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  color: iconBackground,
-                  shape: BoxShape.circle,
+                decoration: ShapeDecoration(
+                  color: iconBackground ?? PeelColors.paper,
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
                 ),
-                child: Icon(icon, size: 20, color: iconColor),
+                child: Icon(icon, size: 20, color: iconColor ?? PeelColors.ink),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -249,22 +257,14 @@ class _Row extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: PeelType.label(color: labelColor)
+                      style: PeelType.label(color: labelColor ?? PeelColors.ink)
                           .copyWith(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
-                    if (detail != null)
-                      Text(
-                        detail!,
-                        style: PeelType.caption().copyWith(fontSize: 13),
-                      ),
                   ],
                 ),
               ),
               if (chevron)
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: PeelColors.muted,
-                ),
+                Icon(Icons.chevron_right_rounded, color: PeelColors.muted),
             ],
           ),
         ),

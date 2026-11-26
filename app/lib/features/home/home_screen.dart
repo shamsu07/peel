@@ -47,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
                     child: Semantics(header: true, child: const PeelLogo()),
                   ),
                   RoundIconButton(
-                    icon: Icons.settings_outlined,
+                    icon: Icons.settings_rounded,
                     tooltip: 'Settings',
                     onPressed: () => context.push(Routes.settings),
                   ),
@@ -70,13 +70,13 @@ class HomeScreen extends ConsumerWidget {
                   Expanded(
                     child: _SourceCard(
                       pair: PeelPairs.mint,
-                      icon: Icons.image_outlined,
+                      icon: Icons.image_rounded,
                       title: 'Photo',
                       caption: 'Background removed for you',
                       tiltDegrees: -1.5,
                       onTap: () => startPhoto(context, ImageSource.gallery),
                       cornerAction: _CornerAction(
-                        icon: Icons.photo_camera_outlined,
+                        icon: Icons.photo_camera_rounded,
                         label: 'Take a photo with the camera',
                         onTap: () => startPhoto(context, ImageSource.camera),
                       ),
@@ -86,7 +86,7 @@ class HomeScreen extends ConsumerWidget {
                   Expanded(
                     child: _SourceCard(
                       pair: PeelPairs.bubblegum,
-                      icon: Icons.smart_display_outlined,
+                      icon: Icons.smart_display_rounded,
                       title: 'Video',
                       caption: 'A moving sticker, up to 10 s',
                       tiltDegrees: 1.5,
@@ -245,8 +245,8 @@ class _IconDisc extends StatelessWidget {
     return Container(
       width: 50,
       height: 50,
-      decoration: const BoxDecoration(
-        color: PeelColors.surface,
+      decoration: BoxDecoration(
+        color: PeelColors.white,
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: color, size: 26),
@@ -280,13 +280,13 @@ class _SoundCard extends StatelessWidget {
                 Container(
                   width: 46,
                   height: 46,
-                  decoration: const BoxDecoration(
-                    color: PeelColors.ink,
+                  decoration: BoxDecoration(
+                    color: PeelColors.onPastel,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.volume_up_rounded,
-                    color: PeelColors.surface,
+                    color: PeelColors.white,
                     size: 22,
                   ),
                 ),
@@ -296,7 +296,10 @@ class _SoundCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Stickers with sound', style: PeelType.label()),
+                      Text(
+                        'Stickers with sound',
+                        style: PeelType.label(color: pair.ink),
+                      ),
                       const SizedBox(height: 3),
                       Text(
                         'Pick a photo or clip, then add your voice.',
@@ -306,7 +309,7 @@ class _SoundCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: PeelColors.ink),
+                Icon(Icons.chevron_right_rounded, color: pair.ink),
               ],
             ),
           ),
@@ -331,11 +334,7 @@ class _PrivacyLine extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(
-          Icons.lock_outline_rounded,
-          size: 15,
-          color: PeelColors.muted,
-        ),
+        Icon(Icons.lock_rounded, size: 15, color: PeelColors.muted),
         const SizedBox(width: 8),
         Flexible(
           child: Text(

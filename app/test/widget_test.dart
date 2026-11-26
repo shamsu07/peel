@@ -84,8 +84,8 @@ void main() {
       stickers: [_record('a'), _record('b', sent: true, sound: true)],
     );
 
-    expect(find.text('My stickers.'), findsOneWidget);
-    expect(find.text('Send 1 new to WhatsApp'), findsOneWidget);
+    expect(find.text('Your peels.'), findsOneWidget);
+    expect(find.text('Send to WhatsApp'), findsOneWidget);
     expect(find.text('New sticker'), findsOneWidget);
     expect(find.byIcon(Icons.volume_up_rounded), findsOneWidget);
   });
@@ -96,7 +96,7 @@ void main() {
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Settings.'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Your photos stay on this phone'), findsOneWidget);
 
     await tester.tap(find.text('Your photos stay on this phone'));

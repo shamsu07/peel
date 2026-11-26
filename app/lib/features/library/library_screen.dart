@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -34,9 +36,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   bool _sending = false;
   List<PackEntry> _packs = const [];
 
-  /// The pack being looked at, or null for all stickers.
-  String? _packFilter;
-
   @override
   void initState() {
     super.initState();
@@ -57,10 +56,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         .where((p) => p.inWhatsApp && ids.contains(p.identifier))
         .toList();
     if (!mounted) return;
-    setState(() {
-      _packs = packs;
-      if (!packs.any((p) => p.identifier == _packFilter)) _packFilter = null;
-    });
+    setState(() => _packs = packs);
   }
 
   Future<void> _sendNew(List<StickerRecord> unsent) async {
@@ -108,23 +104,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     }
   }
 
-  /// The sticker grid: one pack's stickers when a pack is picked,
-  /// otherwise all of them under date headings.
+  /// Every sticker, under date headings.
   List<Widget> _stickerSections(List<StickerRecord> stickers) {
-    final filter = _packFilter;
-    if (filter != null) {
-      final pack = _packs.firstWhere((p) => p.identifier == filter);
-      return [
-        _SectionLabel(
-          pack.name,
-          action: TextButton(
-            onPressed: () => setState(() => _packFilter = null),
-            child: const Text('Show all'),
-          ),
-        ),
-        _grid(stickers.where((r) => r.packIdentifier == filter).toList()),
-      ];
-    }
     final groups = <String, List<StickerRecord>>{};
     final now = DateTime.now();
     for (final r in stickers) {
@@ -143,11 +124,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     padding: const EdgeInsets.symmetric(horizontal: PeelSpace.gutter),
     sliver: SliverGrid.count(
       crossAxisCount: 3,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
+      mainAxisSpacing: 14,
+      crossAxisSpacing: 14,
       children: [
         for (final r in records)
-          _Tile(record: r, onTap: () => showStickerDetail(context, ref, r)),
+          StickerTile(
+            record: r,
+            onTap: () => showStickerDetail(context, ref, r),
+          ),
       ],
     ),
   );
@@ -212,30 +196,28 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             ),
                           ),
                           RoundIconButton(
-                            icon: Icons.settings_outlined,
+                            icon: Icons.settings_rounded,
                             tooltip: 'Settings',
                             onPressed: () => context.push(Routes.settings),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'My stickers.',
-                              style: PeelType.title(),
-                            ),
-                          ),
-                          Text(
-                            '${stickers.length}',
-                            style: PeelType.caption().copyWith(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                      Semantics(
+                        header: true,
+                        child: Text('Your peels.', style: PeelType.title()),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        [
+                          '${stickers.length} sticker${stickers.length == 1 ? '' : 's'}',
+                          if (_packs.isNotEmpty)
+                            '${_packs.length} pack${_packs.length == 1 ? '' : 's'}',
+                        ].join(' · '),
+                        style: PeelType.caption().copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       if (unsent.isNotEmpty) ...[
@@ -268,11 +250,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             stickers: stickers
                                 .where((r) => r.packIdentifier == p.identifier)
                                 .toList(),
-                            selected: _packFilter == p.identifier,
-                            onTap: () => setState(
-                              () => _packFilter = _packFilter == p.identifier
-                                  ? null
-                                  : p.identifier,
+                            onTap: () => showPackSheet(
+                              context,
+                              pack: p,
+                              stickers: stickers
+                                  .where(
+                                    (r) => r.packIdentifier == p.identifier,
+                                  )
+                                  .toList(),
+                              onSticker: (r) =>
+                                  showStickerDetail(context, ref, r),
                             ),
                           );
                         },
@@ -296,7 +283,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     top: 40,
                     bottom: 24 + MediaQuery.paddingOf(context).bottom,
                   ),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -306,7 +293,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ),
                   alignment: Alignment.center,
                   child: DecoratedBox(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.all(Radius.circular(29)),
                       boxShadow: PeelShadows.floating,
@@ -366,11 +353,53 @@ class _SendBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.send_rounded, size: 18),
+            // The send icon carries a bubble with how many are waiting.
+            SizedBox(
+              width: 26,
+              height: 22,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Positioned(
+                    left: 0,
+                    top: 2,
+                    child: Icon(Icons.send_rounded, size: 18),
+                  ),
+                  Positioned(
+                    left: 11,
+                    top: -7,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 18),
+                      height: 18,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        color: WhatsAppColors.onGreen,
+                        shape: StadiumBorder(
+                          side: BorderSide(
+                            color: WhatsAppColors.green,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: const TextStyle(
+                          color: PeelColors.white,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(width: 10),
             Flexible(
               child: Text(
-                sending ? 'Sending…' : 'Send $count new to WhatsApp',
+                sending ? 'Sending…' : 'Send to WhatsApp',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -382,57 +411,93 @@ class _SendBar extends StatelessWidget {
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({required this.record, required this.onTap});
+/// One sticker on the page: no box around it (its own white edge is the
+/// frame), a slight tilt like a sticker pressed on by hand, and a little
+/// squash when tapped.
+class StickerTile extends StatefulWidget {
+  const StickerTile({super.key, required this.record, required this.onTap});
 
   final StickerRecord record;
   final VoidCallback onTap;
 
   @override
+  State<StickerTile> createState() => _StickerTileState();
+}
+
+class _StickerTileState extends State<StickerTile> {
+  bool _down = false;
+
+  /// The same small tilt every time for the same sticker, -2.5° to 2.5°.
+  double get _tilt {
+    final h = widget.record.id.hashCode;
+    return ((h % 11) - 5) / 2 * math.pi / 180;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final record = widget.record;
     final moving = record.kind == StickerKind.moving;
-    return Material(
-      color: PeelColors.surface,
-      borderRadius: BorderRadius.circular(PeelRadii.tile),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(PeelRadii.tile),
-        onTap: onTap,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: StickerImage(record),
-              ),
-            ),
-            if (moving || record.hasSound)
-              Positioned(
-                left: 8,
-                bottom: 8,
-                child: Row(
-                  children: [
-                    if (moving) const _Badge(icon: Icons.play_arrow_rounded),
-                    if (moving && record.hasSound) const SizedBox(width: 4),
-                    if (record.hasSound)
-                      const _Badge(icon: Icons.volume_up_rounded),
-                  ],
-                ),
-              ),
-            if (!record.sentToWhatsApp)
-              Positioned(
-                top: 9,
-                right: 9,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: PeelColors.electric,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: PeelColors.surface, width: 2),
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _down = true),
+        onTapCancel: () => setState(() => _down = false),
+        onTapUp: (_) => setState(() => _down = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _down ? 0.92 : 1,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Transform.rotate(
+                    angle: _tilt,
+                    child: StickerImage(record),
                   ),
                 ),
               ),
-          ],
+              if (moving || record.hasSound)
+                Positioned(
+                  left: 2,
+                  bottom: 2,
+                  child: Row(
+                    children: [
+                      if (moving) const _Badge(icon: Icons.play_arrow_rounded),
+                      if (moving && record.hasSound) const SizedBox(width: 4),
+                      if (record.hasSound)
+                        const _Badge(icon: Icons.volume_up_rounded),
+                    ],
+                  ),
+                ),
+              if (!record.sentToWhatsApp)
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Semantics(
+                    label: 'Not in WhatsApp yet',
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: PeelColors.paper,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: PeelColors.electric,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -447,23 +512,22 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 24,
-      height: 24,
+      width: 22,
+      height: 22,
       decoration: const BoxDecoration(
-        color: PeelColors.ink,
+        color: Color(0xCC111113),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, size: 14, color: PeelColors.surface),
+      child: Icon(icon, size: 13, color: PeelColors.white),
     );
   }
 }
 
 /// A small uppercase heading over a part of the list.
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text, {this.action});
+  const _SectionLabel(this.text);
 
   final String text;
-  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -492,7 +556,6 @@ class _SectionLabel extends StatelessWidget {
                   ),
                 ),
               ),
-              ?action,
             ],
           ),
         ),
@@ -506,13 +569,11 @@ class _PackCard extends StatelessWidget {
   const _PackCard({
     required this.pack,
     required this.stickers,
-    required this.selected,
     required this.onTap,
   });
 
   final PackEntry pack;
   final List<StickerRecord> stickers;
-  final bool selected;
   final VoidCallback onTap;
 
   @override
@@ -520,17 +581,12 @@ class _PackCard extends StatelessWidget {
     final count = stickers.length;
     return Semantics(
       button: true,
-      selected: selected,
       label: '${pack.name}, $count sticker${count == 1 ? '' : 's'}',
       excludeSemantics: true,
       child: Material(
         color: PeelColors.surface,
-        shape: RoundedRectangleBorder(
+        shape: RoundedSuperellipseBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: selected ? PeelColors.ink : PeelColors.surface,
-            width: 2,
-          ),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
@@ -578,4 +634,45 @@ class _PackCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A pack's stickers in a bottom sheet.
+Future<void> showPackSheet(
+  BuildContext context, {
+  required PackEntry pack,
+  required List<StickerRecord> stickers,
+  required void Function(StickerRecord) onSticker,
+}) {
+  final n = stickers.length;
+  return showPeelSheet<void>(
+    context,
+    (ctx) => ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(ctx).height * 0.8,
+      ),
+      child: PeelSheet(
+        title: pack.name,
+        subtitle: '$n sticker${n == 1 ? '' : 's'} · In WhatsApp',
+        child: Flexible(
+          child: GridView.count(
+            shrinkWrap: true,
+            padding: const EdgeInsets.only(bottom: 8),
+            crossAxisCount: 3,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            children: [
+              for (final r in stickers)
+                StickerTile(
+                  record: r,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    onSticker(r);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
