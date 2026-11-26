@@ -393,6 +393,8 @@ void showPeelSnack(
       SnackBar(
         content: Text(message),
         duration: duration,
+        // With a button (e.g. Undo) it would otherwise stay until tapped.
+        persist: false,
         action: actionLabel == null
             ? null
             : SnackBarAction(
