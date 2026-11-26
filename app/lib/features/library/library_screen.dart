@@ -288,7 +288,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       stops: [0, 0.55],
-                      colors: [Color(0x00EEEEF0), PeelColors.paper],
+                      colors: [PeelColors.paper.withValues(alpha: 0), PeelColors.paper],
                     ),
                   ),
                   alignment: Alignment.center,

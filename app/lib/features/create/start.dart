@@ -202,8 +202,9 @@ class _SourceTile extends StatelessWidget {
             Container(
               width: 46,
               height: 46,
-              decoration: BoxDecoration(
-                color: PeelColors.surface,
+              // White on the pastel card in both modes.
+              decoration: const BoxDecoration(
+                color: PeelColors.white,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: pair.ink, size: 24),
