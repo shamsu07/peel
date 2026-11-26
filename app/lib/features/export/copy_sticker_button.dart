@@ -48,17 +48,19 @@ class _CopyStickerButtonState extends ConsumerState<CopyStickerButton> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _copy,
-        // 44 pt touch target around a 40 pt button.
         child: SizedBox.square(
-          dimension: 48,
+          dimension: 52,
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
+              // Electric blue with a white ring, like a small sticker on
+              // the sticker, so it's noticed.
               decoration: BoxDecoration(
-                color: _copied ? PeelPairs.mint.fill : PeelColors.white,
+                color: _copied ? PeelPairs.mint.fill : PeelColors.electric,
                 shape: BoxShape.circle,
+                border: Border.all(color: PeelColors.white, width: 3),
                 boxShadow: PeelShadows.card,
               ),
               child: AnimatedSwitcher(
@@ -66,8 +68,8 @@ class _CopyStickerButtonState extends ConsumerState<CopyStickerButton> {
                 child: Icon(
                   _copied ? Icons.check_rounded : Icons.content_copy_rounded,
                   key: ValueKey(_copied),
-                  size: 19,
-                  color: _copied ? PeelPairs.mint.ink : PeelColors.onPastel,
+                  size: 20,
+                  color: _copied ? PeelPairs.mint.ink : PeelColors.white,
                 ),
               ),
             ),
