@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="app.peel.peel_native">
+  <application>
+    <!-- Shares the copied sticker image with the clipboard. -->
+    <provider
+      android:name="app.peel.peel_native.PeelFileProvider"
+      android:authorities="${applicationId}.peel_native.files"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/peel_native_paths" />
+    </provider>
+  </application>
+</manifest>
