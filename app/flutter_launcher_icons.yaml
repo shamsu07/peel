@@ -1,7 +1,10 @@
 # App icon: the Peel sticker logo. Sources live in ../design/brand/source;
 # regenerate with `dart run flutter_launcher_icons`.
 flutter_launcher_icons:
-  ios: true
+  # iOS icons (light, dark, tinted) are set by hand in
+  # ios/Runner/Assets.xcassets/AppIcon.appiconset; this tool only makes the
+  # Android ones.
+  ios: false
   image_path_ios: "assets_src/icon/icon-1024.png"
   remove_alpha_ios: true
   android: "ic_launcher"
