@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app.dart';
+import 'core/appearance.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // A sticker app shows many small images: keep the cache modest so the
   // app stays light on 2–3 GB phones.
@@ -17,6 +18,7 @@ void main() {
   // work offline, and stickers never get a stand-in font.
   GoogleFonts.config.allowRuntimeFetching = false;
   LicenseRegistry.addLicense(_fontLicenses);
+  await loadAppearance();
   runApp(const ProviderScope(child: PeelApp()));
 }
 

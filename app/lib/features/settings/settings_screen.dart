@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app_state.dart';
+import '../../core/appearance.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/routing/routes.dart';
@@ -61,6 +62,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Text('Settings', style: PeelType.title()),
             ),
             const SizedBox(height: 24),
+            SettingsGroup(
+              title: 'Appearance',
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+                  child: Row(
+                    children: [
+                      for (final a in Appearance.values)
+                        Expanded(
+                          child: _AppearanceOption(
+                            appearance: a,
+                            selected: ref.watch(appearanceProvider) == a,
+                            onTap: () =>
+                                ref.read(appearanceProvider.notifier).set(a),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             SettingsGroup(
               title: 'WhatsApp',
               children: [
@@ -390,6 +412,104 @@ class InfoPage extends StatelessWidget {
               const SizedBox(height: 20),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One appearance choice, shown with little die-cut stickers: a sun for
+/// Light, a moon for Dark, and both for Auto.
+class _AppearanceOption extends StatelessWidget {
+  const _AppearanceOption({
+    required this.appearance,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Appearance appearance;
+  final bool selected;
+  final VoidCallback onTap;
+
+  static Widget _sticker(IconData icon, InkPair pair, double tilt) =>
+      Transform.rotate(
+        angle: tilt,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: pair.fill,
+            shape: BoxShape.circle,
+            border: Border.all(color: PeelColors.white, width: 3),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 20, color: pair.ink),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final sun = _sticker(Icons.wb_sunny_rounded, PeelPairs.butter, -0.12);
+    final moon = _sticker(Icons.nightlight_round, PeelPairs.lilac, 0.12);
+    final (String label, Widget art) = switch (appearance) {
+      Appearance.system => (
+        'Auto',
+        SizedBox(
+          width: 64,
+          height: 44,
+          child: Stack(
+            children: [
+              Positioned(left: 0, top: 2, child: sun),
+              Positioned(right: 0, top: 2, child: moon),
+            ],
+          ),
+        ),
+      ),
+      Appearance.light => ('Light', sun),
+      Appearance.dark => ('Dark', moon),
+    };
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: appearance == Appearance.system
+          ? 'Auto: match the phone'
+          : '$label mode',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: ShapeDecoration(
+            color: selected ? PeelColors.paper : Colors.transparent,
+            shape: RoundedSuperellipseBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: selected ? PeelColors.ink : PeelColors.hairline,
+                width: selected ? 2 : 1,
+              ),
+            ),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: 48, child: Center(child: art)),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: PeelType.caption(color: PeelColors.ink).copyWith(
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

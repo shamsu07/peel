@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'app_state.dart';
+import 'core/appearance.dart';
 import 'core/audio.dart';
 import 'core/design/theme.dart';
 import 'core/design/tokens.dart';
@@ -34,7 +35,6 @@ class _PeelAppState extends ConsumerState<PeelApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    PeelColors.dark = _systemDark;
     if (widget.warmUp) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _warmUp());
     }
@@ -75,9 +75,8 @@ class _PeelAppState extends ConsumerState<PeelApp> with WidgetsBindingObserver {
   /// Follows the phone's light/dark setting while the app is open.
   @override
   void didChangePlatformBrightness() {
-    if (_systemDark != PeelColors.dark) {
-      setState(() => PeelColors.dark = _systemDark);
-    }
+    // Only matters on Auto; build() works out the mode.
+    if (ref.read(appearanceProvider) == Appearance.system) setState(() {});
   }
 
   @override
@@ -89,7 +88,12 @@ class _PeelAppState extends ConsumerState<PeelApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final dark = PeelColors.dark;
+    final dark = switch (ref.watch(appearanceProvider)) {
+      Appearance.system => _systemDark,
+      Appearance.light => false,
+      Appearance.dark => true,
+    };
+    PeelColors.dark = dark;
     // Colours are read when widgets build, so a mode change rebuilds the
     // whole app (the key); the router keeps where you were.
     return AnnotatedRegion<SystemUiOverlayStyle>(
