@@ -1,7 +1,0 @@
-# Vercel only needs the website. Everything else (the app, docs, design
-# sources) stays out of the upload.
-/*
-!website
-website/*
-!website/public
-!vercel.json
