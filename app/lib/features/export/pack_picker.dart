@@ -150,46 +150,66 @@ class _PackSheet extends ConsumerWidget {
       ),
       child: PeelSheet(
         title: 'Add to a pack',
-        subtitle: 'Put $what in a pack you already have, or start a new one.',
+        subtitle: 'Pick a pack for $what, or start a new one.',
         child: Flexible(
-          child: ListView(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final p in packs)
-                _PackRow(
-                  title: p.name,
-                  detail:
-                      '${p.userStickers.length} sticker${p.userStickers.length == 1 ? '' : 's'}',
-                  thumbs: [
-                    if (store != null)
-                      for (final s in p.userStickers.take(4))
-                        Image.file(
-                          store.stickerFile(p.identifier, s.imageFile),
-                          cacheWidth: 120,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, _, _) => const SizedBox(),
+              if (updatesMakeCopies)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_rounded,
+                        size: 16,
+                        color: PeelColors.muted,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'On iPhone, WhatsApp adds the pack again as a copy.',
+                          style: PeelType.caption().copyWith(fontSize: 13),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: 4),
+                  children: [
+                    for (final p in packs)
+                      _PackRow(
+                        title: p.name,
+                        detail:
+                            '${p.userStickers.length} sticker${p.userStickers.length == 1 ? '' : 's'}',
+                        pair: PeelPairs.forKey(p.identifier),
+                        cover: store == null || p.userStickers.isEmpty
+                            ? null
+                            : Image.file(
+                                store.stickerFile(
+                                  p.identifier,
+                                  p.userStickers.first.imageFile,
+                                ),
+                                cacheWidth: 128,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, _, _) => const SizedBox(),
+                              ),
+                        onTap: () =>
+                            Navigator.of(context).pop(PackChoice(p.identifier)),
+                      ),
+                    _PackRow(
+                      title: 'New pack',
+                      detail: 'Starts its own pack in WhatsApp',
+                      icon: Icons.add_rounded,
+                      onTap: () => Navigator.of(context).pop(_newPack),
+                    ),
                   ],
-                  onTap: () =>
-                      Navigator.of(context).pop(PackChoice(p.identifier)),
                 ),
-              _PackRow(
-                title: 'New pack',
-                detail: 'Starts its own pack in WhatsApp',
-                icon: Icons.add_rounded,
-                onTap: () => Navigator.of(context).pop(_newPack),
               ),
-              if (updatesMakeCopies) ...[
-                const SizedBox(height: 12),
-                const PeelNote(
-                  text:
-                      'On iPhone, WhatsApp can’t add stickers to a pack it '
-                      'already has. Picking a pack adds it again with your '
-                      'new sticker in it. You can then delete the older copy '
-                      'in WhatsApp’s sticker settings.',
-                ),
-              ],
             ],
           ),
         ),
@@ -203,14 +223,18 @@ class _PackRow extends StatelessWidget {
     required this.title,
     required this.detail,
     required this.onTap,
-    this.thumbs = const [],
+    this.cover,
+    this.pair,
     this.icon,
   });
 
   final String title;
   final String detail;
   final VoidCallback onTap;
-  final List<Widget> thumbs;
+
+  /// The pack's first sticker, on its colour.
+  final Widget? cover;
+  final InkPair? pair;
   final IconData? icon;
 
   @override
@@ -232,22 +256,20 @@ class _PackRow extends StatelessWidget {
                 Container(
                   width: 56,
                   height: 56,
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(6),
                   decoration: ShapeDecoration(
-                    color: icon == null ? PeelColors.surface : PeelColors.ink,
+                    color: icon == null
+                        ? (pair?.fill ?? PeelColors.surface)
+                        : PeelColors.ink,
                     shape: RoundedSuperellipseBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: icon != null
                       ? Icon(icon, color: PeelColors.surface, size: 26)
-                      : GridView.count(
-                          crossAxisCount: 2,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          mainAxisSpacing: 2,
-                          crossAxisSpacing: 2,
-                          children: thumbs,
+                      : Transform.rotate(
+                          angle: -0.07,
+                          child: cover ?? const SizedBox(),
                         ),
                 ),
                 const SizedBox(width: 14),

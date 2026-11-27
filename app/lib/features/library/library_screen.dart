@@ -556,9 +556,7 @@ class _PackCardState extends State<_PackCard> {
   static const _coverHeight = 118.0;
 
   /// Same colour for the same pack, every time.
-  InkPair get _pair =>
-      PeelPairs.all[widget.pack.identifier.hashCode.abs() %
-          PeelPairs.all.length];
+  InkPair get _pair => PeelPairs.forKey(widget.pack.identifier);
 
   /// Where each fanned sticker sits: (dx from centre, dy, tilt°, size).
   static List<(double, double, double, double)> _fan(int n) => switch (n) {

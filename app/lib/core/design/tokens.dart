@@ -93,6 +93,9 @@ abstract final class PeelPairs {
   );
 
   static const all = [mint, bubblegum, butter, sky, lilac];
+
+  /// The same pair every time for the same [key], e.g. a pack's colour.
+  static InkPair forKey(String key) => all[key.hashCode.abs() % all.length];
 }
 
 /// A colour with a human name, for pickers that need an accessible label.

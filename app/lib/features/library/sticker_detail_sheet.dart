@@ -66,10 +66,10 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
   Widget build(BuildContext context) {
     final r = widget.record;
     final made = DateUtils.isSameDay(r.createdAt, DateTime.now())
-        ? 'made today'
-        : 'made ${r.createdAt.day}/${r.createdAt.month}';
+        ? 'today'
+        : '${r.createdAt.day}/${r.createdAt.month}';
     final meta = [
-      r.source == StickerSource.video ? 'Video sticker' : 'Photo sticker',
+      r.source == StickerSource.video ? 'Video' : 'Photo',
       if (r.hasSound) 'with sound',
       made,
     ].join(' · ');
@@ -100,53 +100,60 @@ class _DetailSheetState extends ConsumerState<_DetailSheet> {
               ),
             ),
             const SizedBox(height: 14),
+            // The sticker on the sheet itself: its white edge is the frame.
             SizedBox(
-              height: 230,
-              child: Checkerboard(
-                radius: 26,
-                child: Stack(
-                  children: [
-                    Center(child: StickerPreview(r, size: 176)),
-                    Positioned(
-                      right: 10,
-                      top: 10,
-                      child: IconButton(
-                        tooltip: 'Close',
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: IconButton.styleFrom(
-                          backgroundColor: PeelColors.closeFill,
-                          foregroundColor: PeelColors.tagRed,
-                          fixedSize: const Size.square(44),
-                        ),
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                      ),
+              height: 220,
+              child: Stack(
+                children: [
+                  Center(
+                    child: Transform.rotate(
+                      angle: -0.05,
+                      child: StickerPreview(r, size: 184),
                     ),
-                  ],
-                ),
+                  ),
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: IconButton(
+                      tooltip: 'Close',
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: PeelColors.closeFill,
+                        foregroundColor: PeelColors.tagRed,
+                        fixedSize: const Size.square(44),
+                      ),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
+            const SizedBox(height: 10),
+            // One quiet line: where it is (the dot matches Home's), then
+            // what it is.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                r.sentToWhatsApp
-                    ? const PeelChip(
-                        label: 'In WhatsApp',
-                        pair: PeelPairs.mint,
-                        icon: Icons.check_rounded,
-                      )
-                    : const PeelChip(label: 'Not in WhatsApp yet'),
-                Text(
-                  meta,
-                  style: PeelType.caption().copyWith(
-                    fontWeight: FontWeight.w600,
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: r.sentToWhatsApp
+                        ? WhatsAppColors.green
+                        : PeelColors.electric,
+                    shape: BoxShape.circle,
                   ),
                 ),
+                const SizedBox(width: 7),
+                Text(
+                  r.sentToWhatsApp ? 'In WhatsApp' : 'Not sent yet',
+                  style: PeelType.caption(color: PeelColors.ink)
+                      .copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text('  ·  $meta', style: PeelType.caption()),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             if (!r.sentToWhatsApp)
               _Row(
                 icon: Icons.send_rounded,

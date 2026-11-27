@@ -534,7 +534,7 @@ class _CropPreviewState extends State<_CropPreview> {
                 bottom: 10,
                 child: _Pill(
                   background: const Color(0xD1111113),
-                  color: PeelColors.surface,
+                  color: PeelColors.white,
                   text: label,
                 ),
               ),
