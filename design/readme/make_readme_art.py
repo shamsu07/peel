@@ -19,21 +19,22 @@ DOT = {"light": "#E4DFD7", "dark": "#24242B"}
 
 
 # Each sticker's canvas size and the box its visible part fills:
-# (canvas, x, y, width, height), measured from the alpha channel.
+# (canvas width, canvas height, x, y, width, height), measured from the
+# alpha channel. Some stickers aren't square.
 BOXES = {
-    "badge": (408, 68, 79, 272, 274),
-    "brb": (468, 109, 107, 249, 216),
-    "cat": (408, 105, 102, 198, 223),
-    "cloud": (408, 91, 134, 235, 161),
-    "dog": (408, 89, 135, 230, 172),
-    "flame": (396, 114, 89, 170, 242),
-    "googly_eyes": (408, 82, 131, 244, 170),
-    "heart_ok": (402, 97, 125, 208, 189),
-    "lol_same": (528, 80, 102, 371, 225),
-    "nope": (468, 76, 109, 317, 214),
-    "on_my_way": (468, 92, 86, 283, 260),
-    "running_late": (468, 74, 69, 322, 292),
-    "star": (408, 87, 90, 234, 232),
+    "badge": (408, 408, 68, 79, 272, 274),
+    "brb": (468, 408, 109, 107, 249, 216),
+    "cat": (408, 408, 105, 102, 198, 223),
+    "cloud": (408, 408, 91, 134, 235, 161),
+    "dog": (408, 408, 89, 135, 230, 172),
+    "flame": (396, 396, 114, 89, 170, 242),
+    "googly_eyes": (408, 408, 82, 131, 244, 170),
+    "heart_ok": (402, 402, 97, 125, 208, 189),
+    "lol_same": (528, 408, 80, 102, 371, 225),
+    "nope": (468, 408, 76, 109, 317, 214),
+    "on_my_way": (468, 408, 92, 86, 283, 260),
+    "running_late": (468, 408, 74, 69, 322, 292),
+    "star": (408, 408, 87, 90, 234, 232),
 }
 
 
@@ -85,7 +86,7 @@ def banner(theme: str) -> str:
 def placed(name: str, height: float, angle: float):
     """A sticker cropped to its visible part, tilted by [angle] and scaled
     to [height]. Returns (svg fragment drawn at 0,0, width, height)."""
-    canvas, x, y, w, h = BOXES[name]
+    cw, ch, x, y, w, h = BOXES[name]
     k = height / h
     a = math.radians(angle)
     rw = (w * abs(math.cos(a)) + h * abs(math.sin(a))) * k
@@ -95,7 +96,7 @@ def placed(name: str, height: float, angle: float):
     frag = (
         f'<g transform="translate({rw / 2:.1f} {rh / 2:.1f}) rotate({angle}) '
         f'scale({k:.4f}) translate({-cx} {-cy})">'
-        f'<image href="{href}" width="{canvas}" height="{canvas}"/></g>'
+        f'<image href="{href}" width="{cw}" height="{ch}"/></g>'
     )
     return frag, rw, rh
 
