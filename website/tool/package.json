@@ -1,0 +1,16 @@
+{
+  "name": "peel-website-tools",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tools for the Peel website. Not deployed.",
+  "scripts": {
+    "media": "node media.mjs",
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "qrcode-generator": "^1.4.4",
+    "sharp": "^0.34.0",
+    "subset-font": "^2.4.0"
+  }
+}
