@@ -31,6 +31,9 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      # The plugin's Pigeon API file needs the plugin's own dev packages.
+      - run: flutter pub get
+        working-directory: app/packages/peel_native
       - run: dart format --output=none --set-exit-if-changed lib test hook
       - run: flutter analyze
       - run: flutter test
