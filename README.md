@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/no%20tracking-2FB344" alt="No tracking">
 </p>
 
-## <img src="app/assets/stickers/star.webp" width="34" align="center" alt=""> What it does
+## What it does <img src="design/readme/sticker-star.svg" height="36" align="middle" alt="">
 
 - **Cut-outs in one tap.** Pick a photo; Peel finds the person, pet or
   thing, cuts it out and adds a white sticker edge.
@@ -32,14 +32,14 @@
   <img src="design/readme/stickers.svg" width="100%" alt="A row of stickers: a dog, brb, a cloud, on my way, nope, a made-by-me badge and running late">
 </p>
 
-## <img src="app/assets/stickers/heart_ok.webp" width="34" align="center" alt=""> Private by design
+## Private by design <img src="design/readme/sticker-heart_ok.svg" height="36" align="middle" alt="">
 
 Everything happens on the device. No account, no ads, no analytics, no
 uploads. See the [privacy policy](docs/store/privacy-policy.md).
 
-## <img src="app/assets/stickers/googly_eyes.webp" width="34" align="center" alt=""> How it's built
+## How it's built <img src="design/readme/sticker-googly_eyes.svg" height="36" align="middle" alt="">
 
-| | |
+| Part | Built with |
 |---|---|
 | App | Flutter, Riverpod, go_router |
 | Sticker encoding | [libwebp](https://chromium.googlesource.com/webm/libwebp) 1.6.0, vendored and built through Dart native-assets hooks, called over FFI |
@@ -56,14 +56,14 @@ design/brand/        icon and logo sources
 docs/                spec, decisions, research, store and release guides
 ```
 
-### <img src="app/assets/stickers/on_my_way.webp" width="28" align="center" alt=""> Stickers with sound
+### Stickers with sound
 
 No app can add sound to a WhatsApp sticker through WhatsApp's APIs today.
 Peel prepares a short MP4 and walks you through WhatsApp's own
 **Create sticker** for that last step. WhatsApp keeps up to 5 seconds of
 sound for video stickers.
 
-## <img src="app/assets/stickers/flame.webp" width="34" align="center" alt=""> Build it
+## Build it <img src="design/readme/sticker-flame.svg" height="36" align="middle" alt="">
 
 You need Flutter 3.50 (stable), Xcode 26 or later for iOS, and Android SDK 36 with
 NDK 28 for Android.
@@ -84,13 +84,13 @@ Test builds can include an on-device test lab:
 
 Store releases: [docs/store/release.md](docs/store/release.md).
 
-## <img src="app/assets/stickers/cat.webp" width="34" align="center" alt=""> Contributing
+## Contributing <img src="design/readme/sticker-cat.svg" height="36" align="middle" alt="">
 
 Issues and pull requests are welcome. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) first, and report security problems
 privately as described in [SECURITY.md](SECURITY.md).
 
-## <img src="app/assets/stickers/badge.webp" width="34" align="center" alt=""> Licence
+## Licence <img src="design/readme/sticker-badge.svg" height="36" align="middle" alt="">
 
 Peel is [MIT licensed](LICENSE). It bundles libwebp (BSD, see
 `app/third_party/libwebp/COPYING`) and fonts under the SIL Open Font
@@ -99,4 +99,4 @@ Licence (see `app/assets/google_fonts/`).
 Peel isn't made by, affiliated with or endorsed by WhatsApp or Meta.
 WhatsApp is a trademark of its owner.
 
-<p align="center"><br><img src="app/assets/stickers/lol_same.webp" width="96" alt=""></p>
+<p align="center"><br><img src="design/readme/sticker-lol_same.svg" width="150" alt=""></p>

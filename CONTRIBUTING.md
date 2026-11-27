@@ -17,7 +17,7 @@ flutter pub get
 flutter test
 ```
 
-See the [README](README.md#-build-it) for tool versions.
+See the [README](README.md#build-it) for tool versions.
 
 ## Making a change
 
