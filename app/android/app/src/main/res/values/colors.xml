@@ -2,4 +2,5 @@
 <resources>
     <!-- Peel's paper colour, so the app opens without a white flash. -->
     <color name="launch_background">#F1EEE9</color>
+    <color name="ic_launcher_background">#111113</color>
 </resources>
