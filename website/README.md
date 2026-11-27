@@ -27,8 +27,8 @@ fonts, wordmark and stickers.
 | `public/assets/` | Fonts, stickers (AVIF and WebP), wordmark and the QR drawer. Names carry a content hash and are cached for a year. |
 | `public/download/peel.apk` | The APK. Built locally, ignored by git. |
 | `public/og.png`, icons, `site.webmanifest` | Share image and icons. |
-| `vercel.json` | Clean URLs, cache headers, APK headers, security headers. |
-| `.vercelignore` | Uploads only `public/` and `vercel.json`. |
+| `/vercel.json` (repo root) | Serves `website/public`; clean URLs, cache, APK and security headers. |
+| `/.vercelignore` (repo root) | Uploads only `website/public/` and `vercel.json`. |
 | `tool/build_apk.sh` | Builds the APK and updates the page. |
 | `tool/build.mjs` | Updates the page in place: APK version and size, site URL, JSON-LD, robots.txt, sitemap, privacy page. No dependencies. |
 | `tool/media.mjs` | Regenerates fonts, images and icons from `app/` and `design/`. Needs `npm install` in `tool/`. |
@@ -136,13 +136,14 @@ website/tool/build_apk.sh
 ```
 
 ```bash
-cd website && npx vercel deploy --prod
+npx vercel deploy --prod
 ```
 
-The first run asks you to log in and link a project. Accept the defaults:
-`vercel.json` sets "Other" as the framework, no build command, and
-`public` as the output folder. `.vercelignore` limits the upload to
-`public/` and `vercel.json`, about 22 MB in total.
+Run it from the repo root. The first run asks you to log in and link a
+project. Accept the defaults and leave **Root Directory** as the repo root:
+the root `vercel.json` sets "Other" as the framework, no build command, and
+`website/public` as the output folder. The root `.vercelignore` limits the
+upload to `website/public/` and `vercel.json`, about 22 MB in total.
 
 Then check that the APK is served with the right headers:
 
@@ -153,8 +154,9 @@ curl -sI https://your-domain.example/download/peel.apk
 Expect `content-type: application/vnd.android.package-archive` and
 `content-disposition: attachment; filename="peel.apk"`.
 
-If you connect the GitHub repo to Vercel instead (root directory
-`website`), the page deploys but the APK doesn't, because it isn't in git.
+If you connect the GitHub repo to Vercel instead (keep the Root Directory
+as the repo root), the page deploys but the APK doesn't, because it isn't in
+git.
 Use GitHub Releases for the file in that case (see below).
 
 ### Limits, and when to use GitHub Releases

@@ -1,5 +1,0 @@
-# Upload only what the site serves. The APK in public/download is ignored
-# by git but must be uploaded, so this list is explicit.
-/*
-!public
-!vercel.json
