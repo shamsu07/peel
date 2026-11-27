@@ -1,15 +1,18 @@
 # peel_native
 
-A new Flutter plugin project.
+Peel's own Flutter plugin: the native work Dart can't do well on its own.
 
-## Getting Started
+- **Cut-outs:** ML Kit Subject Segmentation on Android, Vision on iOS.
+- **Video:** frame extraction and trimming (Media3 / AVFoundation).
+- **WhatsApp:** the sticker pack bridge (ContentProvider on Android,
+  pasteboard hand-off on iOS) and the sound-sticker MP4 hand-off.
+- **Clipboard:** copying stickers and GIFs.
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/to/develop-plugins),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+The Dart ↔ native API is generated with [Pigeon](https://pub.dev/packages/pigeon)
+from `pigeon/messages.dart`. After changing it, run from this folder:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+dart run pigeon --input pigeon/messages.dart
+```
 
+This package is internal to Peel and not published to pub.dev.
