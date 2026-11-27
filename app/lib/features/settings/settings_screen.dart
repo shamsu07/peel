@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app_state.dart';
+import '../../core/build_info.dart';
 import '../../core/appearance.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
@@ -145,15 +146,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   icon: Icons.info_rounded,
                   pair: PeelPairs.lilac,
                   title: 'Version',
-                  value: '0.1 (test build)',
+                  value: appVersion,
                 ),
                 SettingsRow(
-                  icon: Icons.science_rounded,
-                  pair: PeelPairs.bubblegum,
-                  title: 'Test lab',
-                  subtitle: 'For testing only',
-                  onTap: () => context.push(Routes.lab),
+                  icon: Icons.description_rounded,
+                  pair: PeelPairs.sky,
+                  title: 'Licences',
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: 'Peel',
+                    applicationVersion: appVersion,
+                  ),
                 ),
+                if (showTestLab)
+                  SettingsRow(
+                    icon: Icons.science_rounded,
+                    pair: PeelPairs.bubblegum,
+                    title: 'Test lab',
+                    subtitle: 'For testing only',
+                    onTap: () => context.push(Routes.lab),
+                  ),
               ],
             ),
             const SizedBox(height: 16),
@@ -326,7 +338,7 @@ class InfoPage extends StatelessWidget {
   final String title;
   final List<(String heading, String body)> sections;
 
-  static InfoPage privacy() => const InfoPage(
+  static InfoPage privacy() => InfoPage(
     title: 'Privacy.',
     sections: [
       (
@@ -343,6 +355,13 @@ class InfoPage extends StatelessWidget {
         'Only what you choose to send: stickers you add to WhatsApp, and files '
             'you save or share.',
       ),
+      if (Platform.isAndroid)
+        (
+          'Cut-outs on Android',
+          'They use Google’s ML Kit on this phone. It may send Google technical '
+              'details, like your phone model, to keep it working. Never your '
+              'photos.',
+        ),
     ],
   );
 

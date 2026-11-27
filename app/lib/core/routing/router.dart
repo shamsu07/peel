@@ -7,6 +7,7 @@ import '../../features/export/sent_screen.dart';
 import '../../features/export/sound_handoff_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/lab/encoder_lab_screen.dart';
+import '../build_info.dart';
 import '../../features/photo/photo_editor_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/text/text_editor_screen.dart';
@@ -55,6 +56,7 @@ GoRouter buildRouter() => GoRouter(
     GoRoute(path: Routes.privacy, builder: (_, _) => InfoPage.privacy()),
     GoRoute(path: Routes.soundHelp, builder: (_, _) => InfoPage.soundHelp()),
     GoRoute(path: Routes.rulesHelp, builder: (_, _) => InfoPage.rulesHelp()),
-    GoRoute(path: Routes.lab, builder: (_, _) => const EncoderLabScreen()),
+    if (showTestLab)
+      GoRoute(path: Routes.lab, builder: (_, _) => const EncoderLabScreen()),
   ],
 );
