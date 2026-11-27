@@ -144,30 +144,57 @@ String shareLabel(StickerRecord record) =>
     ? 'Share as image'
     : 'Share to another app';
 
-/// Phase 0 test of the iPhone single-sticker route: copy, then paste into a
-/// WhatsApp chat.
+/// What Copy gives for a sticker, or null when there's nothing useful to
+/// copy.
+enum CopyKind { sticker, gif }
+
+/// Still stickers paste into WhatsApp as stickers. Moving ones only paste
+/// as a GIF (WhatsApp shows anything else frozen), and only the iPhone can
+/// make the GIF. A copy can't carry sound, so sound stickers have no Copy.
+CopyKind? copyKindFor(StickerRecord record) {
+  if (record.hasSound) return null;
+  if (record.kind == StickerKind.still) return CopyKind.sticker;
+  return Platform.isIOS ? CopyKind.gif : null;
+}
+
+String copyLabel(CopyKind kind) =>
+    kind == CopyKind.gif ? 'Copy as GIF' : 'Copy sticker';
+
 Future<bool> copySticker(
   BuildContext context,
   WidgetRef ref,
   StickerRecord record,
 ) async {
+  final kind = copyKindFor(record);
+  if (kind == null) return false;
   final library = await ref.read(libraryStoreProvider.future);
-  final ok = await ref
-      .read(nativeProvider)
-      .copyStickerToClipboard(
-        library.file(record.webpFile).path,
-        // A still PNG alongside makes WhatsApp paste a moving sticker as a
-        // still one, so moving stickers go as the WebP alone.
-        record.kind == StickerKind.moving
-            ? ''
-            : library.file(record.previewFile).path,
+  final native = ref.read(nativeProvider);
+  final webp = library.file(record.webpFile).path;
+  var ok = false;
+  try {
+    if (kind == CopyKind.gif) {
+      final tmp = await getTemporaryDirectory();
+      final gif = '${tmp.path}/peel_copy.gif';
+      ok =
+          await native.convertAnimatedWebp(webp, gif, 'gif') &&
+          await native.copyFilesToClipboard({'com.compuserve.gif': gif});
+    } else {
+      ok = await native.copyStickerToClipboard(
+        webp,
+        library.file(record.previewFile).path,
       );
+    }
+  } catch (_) {
+    ok = false;
+  }
   if (context.mounted) {
     showPeelSnack(
       context,
-      ok
-          ? 'Copied. Paste it into a WhatsApp chat.'
-          : 'Couldn’t copy this sticker.',
+      !ok
+          ? 'Couldn’t copy this sticker.'
+          : kind == CopyKind.gif
+          ? 'GIF copied. Paste it into any chat.'
+          : 'Copied. Paste it into a WhatsApp chat.',
     );
   }
   return ok;

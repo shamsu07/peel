@@ -335,7 +335,10 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
         : [kCGImagePropertyHEICSDictionary: [kCGImagePropertyHEICSLoopCount: 0]]
       CGImageDestinationSetProperties(dest, loop as CFDictionary)
       for i in 0..<count {
-        guard let frame = CGImageSourceCreateImageAtIndex(src, i, nil) else { continue }
+        guard let raw = CGImageSourceCreateImageAtIndex(src, i, nil) else { continue }
+        // Chat apps turn GIFs into video, where see-through parts go black;
+        // a white ground keeps the sticker looking like itself.
+        let frame = gif ? (flattenOnWhite(raw) ?? raw) : raw
         let props = CGImageSourceCopyPropertiesAtIndex(src, i, nil) as? [CFString: Any]
         let webp = props?[kCGImagePropertyWebPDictionary] as? [CFString: Any]
         let delay =
@@ -389,6 +392,21 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
     UIPasteboard.general.setItems([item])
     return true
   }
+}
+
+/// Draws [image] over white, dropping its transparency.
+private func flattenOnWhite(_ image: CGImage) -> CGImage? {
+  let rect = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+  guard
+    let ctx = CGContext(
+      data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
+      bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+  else { return nil }
+  ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+  ctx.fill(rect)
+  ctx.draw(image, in: rect)
+  return ctx.makeImage()
 }
 
 /// Writes a silent H.264 video that shows one picture for [duration].
