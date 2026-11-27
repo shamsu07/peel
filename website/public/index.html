@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Peel: Sticker Maker · Photos and videos to stickers</title>
+<meta name="description" content="Turn photos and videos into stickers, with sound. Cut-outs happen on your phone. Free, no account, no ads.">
+<link rel="canonical" href="https://peel.example/">
+<!-- shared-head -->
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F1EEE9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17171C" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/inter-tight-800.64333127.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-tight-400.420603f2.woff2" as="font" type="font/woff2" crossorigin>
+<script>
+  // Which download to show: Android gets the APK, iPhone and iPad get
+  // "coming soon", everything else gets a QR code. Runs before first paint.
+  (function () {
+    var n = navigator, ua = n.userAgent, p = 'desktop';
+    if ((n.userAgentData && n.userAgentData.platform === 'Android') || /Android/i.test(ua)) p = 'android';
+    else if (/iPhone|iPad|iPod/.test(ua) || (n.platform === 'MacIntel' && n.maxTouchPoints > 1)) p = 'ios';
+    document.documentElement.dataset.platform = p;
+  })();
+</script>
+<style>
+@font-face{font-family:"Inter Tight";font-style:normal;font-weight:400;font-display:swap;src:url(/assets/fonts/inter-tight-400.420603f2.woff2) format("woff2")}
+@font-face{font-family:"Inter Tight";font-style:normal;font-weight:700;font-display:swap;src:url(/assets/fonts/inter-tight-700.b2c2945d.woff2) format("woff2")}
+@font-face{font-family:"Inter Tight";font-style:normal;font-weight:800;font-display:swap;src:url(/assets/fonts/inter-tight-800.64333127.woff2) format("woff2")}
+@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;font-display:swap;src:url(/assets/fonts/instrument-serif-italic.3f2671ee.woff2) format("woff2")}
+@font-face{font-family:"Titan One";font-style:normal;font-weight:400;font-display:swap;src:url(/assets/fonts/titan-one.1d76d0bb.woff2) format("woff2")}
+@font-face{font-family:"Luckiest Guy";font-style:normal;font-weight:400;font-display:swap;src:url(/assets/fonts/luckiest-guy.767c2131.woff2) format("woff2")}
+@font-face{font-family:"Baloo 2";font-style:normal;font-weight:800;font-display:swap;src:url(/assets/fonts/baloo-2-800.e09fe249.woff2) format("woff2")}
+/* Arial, stretched to Inter Tight's metrics, so text barely moves when the font arrives. */
+@font-face{font-family:"Inter Tight Fallback";src:local("Arial"),local("Helvetica"),local("Roboto");size-adjust:98%;ascent-override:98%;descent-override:24%;line-gap-override:0%}
+
+/* Tokens from app/lib/core/design/tokens.dart. tagRed is a shade darker here so 12 px white text passes 4.5:1. */
+:root{
+  color-scheme:light dark;
+  --paper:#F1EEE9;--surface:#FFFFFF;--ink:#111113;--muted:#5F5F68;--muted-strong:#4A4A52;
+  --track:#E6E2DC;--hairline:#D8D3CC;--on-pastel:#111113;--edge:#FFFFFF;
+  --electric:#3D5AFE;--tag-red:#D92B2E;
+  --mint:#CFF5B4;--mint-ink:#1C5B2C;--gum:#FFD0EE;--gum-ink:#A3166F;
+  --butter:#FFE88F;--butter-ink:#6B3A00;--sky:#CFE6FB;--sky-ink:#1E3F7A;
+  --lilac:#DCCBFF;--lilac-ink:#4B2A9B;
+  --sun:#FFD60A;--hot-pink:#FF3DA5;--tangerine:#FF7A00;--lime:#9BE000;
+  --shadow:0 10px 22px rgb(58 42 26 / .10);
+  --gutter:20px;
+  --font:"Inter Tight","Inter Tight Fallback",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#17171C;--surface:#24242B;--ink:#F4F2EE;--muted:#A6A6B0;--muted-strong:#C4C4CC;
+    --track:#30303A;--hairline:#3B3B45;--shadow:0 10px 22px rgb(0 0 0 / .4);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;min-height:100dvh;background:var(--paper);color:var(--ink);font:400 1.0625rem/1.4 var(--font);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:clip}
+img,svg,picture{display:block;max-width:100%}
+img{height:auto}
+h1,h2,h3,p,ol,ul{margin:0}
+ol,ul{padding:0;list-style:none}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--electric);outline-offset:3px;border-radius:10px}
+.wrap{width:min(100% - 2 * var(--gutter),1120px);margin-inline:auto}
+.skip{position:absolute;left:var(--gutter);top:-100px;z-index:10;padding:10px 16px;border-radius:999px;background:var(--ink);color:var(--surface);font-weight:700;text-decoration:none}
+.skip:focus{top:12px}
+.i{width:1.3em;height:1.3em;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Type scale from typography.dart. */
+.display{font-weight:800;font-size:clamp(3.6rem,2.4rem + 5vw,7rem);line-height:.88;letter-spacing:-.055em}
+.title{font-weight:800;font-size:clamp(2.1rem,1.6rem + 2vw,3rem);line-height:1;letter-spacing:-.05em;text-wrap:balance}
+.lede{color:var(--muted);max-width:21em;text-wrap:pretty}
+.meta{font-size:.84rem;line-height:1.35;color:var(--muted)}
+
+/* Header */
+.top{display:flex;align-items:center;justify-content:space-between;padding-block:max(10px,env(safe-area-inset-top)) 4px}
+.brand{display:block;margin-left:-6px;border-radius:14px}
+.brand img{width:112px;view-transition-name:wordmark}
+.tag{display:inline-block;padding:4px 9px;background:var(--tag-red);color:#fff;font-size:.75rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;line-height:1.2;--r:8px;border-radius:var(--r);border:3px solid var(--edge);box-shadow:var(--shadow);rotate:7deg}
+
+/* Hero */
+.hero{display:grid;grid-template-areas:"copy" "get";position:relative;padding-block:14px 40px}
+.hero-copy{grid-area:copy;position:relative;z-index:1}
+.hero-copy .lede{margin-top:18px}
+.hero-art{grid-area:copy;justify-self:end;align-self:start;position:relative;width:min(56%,260px);aspect-ratio:1.1;margin:-12px -10px 0 0;pointer-events:none}
+.hero-art picture{position:absolute;width:var(--w);top:var(--t);left:var(--l,auto);right:var(--rt,auto);rotate:var(--rot)}
+.hero-art img{width:100%}
+.hero-art .a1{--w:66%;--t:-4%;--rt:-4%;--rot:-8deg}
+.hero-art .a2{--w:50%;--t:50%;--l:0%;--rot:-6deg}
+.hero-art .a3{--w:44%;--t:54%;--rt:-2%;--rot:8deg}
+.hero-art .a4,.hero-art .a5{display:none}
+
+/* Download */
+.get{grid-area:get;margin-top:26px}
+.get>[data-for]{display:none}
+html:not([data-platform]) .get>[data-for=android],
+[data-platform=android] [data-for=android],
+[data-platform=ios] [data-for=ios],
+[data-platform=desktop] [data-for=desktop]{display:block}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:58px;padding:0 26px;border-radius:999px;font:700 1.0625rem/1.1 var(--font);text-decoration:none;text-align:center}
+.btn-primary{background:var(--ink);color:var(--surface);transition:transform .15s ease,background-color .15s ease}
+.btn-primary:hover{background:color-mix(in oklab,var(--ink) 86%,var(--paper))}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary .i{width:22px;height:22px;stroke-width:2.6}
+.btn-soon{position:relative;background:var(--track);color:var(--muted-strong)}
+.btn-soon .tag{position:absolute;top:-12px;right:22px;background:var(--butter);color:var(--butter-ink)}
+.get .meta{margin-top:10px;text-align:center}
+.status{min-height:1.35em;margin-top:2px;font-size:.84rem;font-weight:700;text-align:center;color:var(--ink)}
+.status:empty{min-height:0}
+
+/* Install steps: three small die-cut tiles with a hint of the real screen. */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;counter-reset:step}
+.step{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px 10px;background:var(--fill);color:var(--pair-ink);--r:22px;border-radius:var(--r);border:4px solid var(--edge);box-shadow:var(--shadow);rotate:var(--tilt);counter-increment:step;text-align:center}
+.step::before{content:counter(step);position:absolute;top:-11px;left:-9px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--on-pastel);color:#fff;border:3px solid var(--edge);font-size:.8rem;font-weight:800;rotate:-6deg}
+.step-label{font-size:.82rem;font-weight:700;line-height:1.2;color:var(--pair-ink);text-wrap:balance}
+.mock{display:grid;place-items:center;height:40px;width:100%}
+.mock-file{display:flex;align-items:center;gap:5px;max-width:100%;padding:6px 8px;background:#fff;color:var(--on-pastel);--r:10px;border-radius:var(--r);font-size:.7rem;font-weight:700}
+.mock-file .i{width:15px;height:15px;color:var(--mint-ink)}
+.mock-toggle{position:relative;width:46px;height:26px;border-radius:999px;background:var(--butter-ink)}
+.mock-toggle::after{content:"";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+.mock-install{padding:6px 14px;border-radius:999px;background:var(--on-pastel);color:#fff;font-size:.72rem;font-weight:700}
+.fine{margin-top:18px;font-size:.8rem;line-height:1.35;color:var(--muted);text-align:center;text-wrap:balance}
+
+/* Desktop: scan to open on a phone. */
+.qr-card{display:flex;align-items:center;gap:22px;padding:18px;background:var(--surface);--r:28px;border-radius:var(--r);max-width:470px}
+.qr{flex:none;width:148px;aspect-ratio:1;padding:8px;background:#fff;color:#111113;--r:18px;border-radius:var(--r);border:4px solid #fff;box-shadow:var(--shadow);rotate:-1.5deg}
+.qr svg{width:100%;height:100%}
+.qr-title{font-size:1.4rem;font-weight:800;letter-spacing:-.04em;line-height:1.05}
+.qr-card .meta{margin-top:6px;text-align:start}
+.qr-card a{display:inline-block;margin-top:12px;font-size:.9rem;font-weight:700;text-underline-offset:3px}
+.no-qr .qr{display:none}
+
+/* Features: pastel die-cut cards, as on the app's home screen. */
+.features{padding-block:24px 36px}
+.features .title{margin-bottom:26px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 14px}
+.card{display:flex;flex-direction:column;gap:4px;min-height:168px;padding:15px;background:var(--fill);color:var(--pair-ink);--r:28px;border-radius:var(--r);border:5px solid var(--edge);box-shadow:var(--shadow);rotate:var(--tilt,0deg)}
+.card h3{margin-top:auto;padding-top:14px;font-size:1.6rem;font-weight:800;line-height:1;letter-spacing:-.04em}
+.card p{font-size:.875rem;line-height:1.3}
+.disc{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:#fff;color:var(--pair-ink)}
+.disc .i{width:26px;height:26px}
+.disc b{font-size:1.15rem;font-weight:800;letter-spacing:-.04em}
+.mint{--fill:var(--mint);--pair-ink:var(--mint-ink)}
+.gum{--fill:var(--gum);--pair-ink:var(--gum-ink)}
+.butter{--fill:var(--butter);--pair-ink:var(--butter-ink)}
+.sky{--fill:var(--sky);--pair-ink:var(--sky-ink)}
+.lilac{--fill:var(--lilac);--pair-ink:var(--lilac-ink)}
+.plain{--fill:#fff;--pair-ink:var(--on-pastel)}
+.plain .disc{background:#F1EEE9}
+.cards li:nth-child(4n+1){--tilt:-1.5deg}
+.cards li:nth-child(4n+2){--tilt:1.5deg}
+.cards li:nth-child(4n+3){--tilt:1deg}
+.cards li:nth-child(4n+4){--tilt:-1deg}
+.fonts{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin-top:4px;line-height:1}
+.fonts span{-webkit-text-stroke:.2em #fff;paint-order:stroke fill;font-size:1.35rem}
+.f-bubble{font-family:"Titan One",var(--font);color:var(--hot-pink)}
+.f-comic{font-family:"Luckiest Guy",var(--font);color:var(--electric);font-size:1.25rem!important}
+.f-round{font-family:"Baloo 2",var(--font);font-weight:800;color:var(--tangerine)}
+.f-classy{font-family:"Instrument Serif",serif;font-style:italic;color:var(--sky-ink)}
+
+/* A loose pile of stickers made in Peel. */
+.wall{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0;padding-block:12px 40px}
+.wall li{rotate:var(--tilt)}
+.wall li{margin:-8px -6px}
+.wall img{width:auto;height:var(--h,94px)}
+.wall li:nth-child(odd){--tilt:-6deg}
+.wall li:nth-child(even){--tilt:5deg}
+.wall li:nth-child(3n){--tilt:-2deg;--h:106px}
+
+/* Privacy */
+.private{display:flex;gap:16px;align-items:flex-start;padding:22px;background:var(--surface);--r:28px;border-radius:var(--r)}
+.private .disc{background:var(--ink);color:var(--surface);flex:none}
+.private h2{font-size:1.6rem;font-weight:800;letter-spacing:-.04em;line-height:1.05}
+.private p{margin-top:6px;color:var(--muted);text-wrap:pretty}
+.private a{display:inline-block;margin-top:10px;font-weight:700;font-size:.95rem;text-underline-offset:3px}
+
+.again{padding-top:28px}
+
+/* Footer */
+.foot{display:flex;flex-direction:column;gap:6px;padding-block:36px max(28px,env(safe-area-inset-bottom));font-size:.8rem;line-height:1.35;color:var(--muted)}
+.foot nav{display:flex;gap:18px}
+.foot a{font-weight:700;color:var(--muted-strong);text-underline-offset:3px;padding-block:4px}
+
+/* Privacy page */
+.doc{max-width:40rem;padding-block:20px 8px}
+.doc h1{font-size:clamp(2.4rem,1.8rem + 3vw,3.4rem);font-weight:800;line-height:1;letter-spacing:-.05em;text-wrap:balance}
+.doc h2{margin-top:34px;font-size:1.35rem;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.doc p,.doc ul{margin-top:12px;color:var(--muted-strong);text-wrap:pretty}
+.doc ul{padding-left:1.2em;list-style:disc}
+.doc li+li{margin-top:6px}
+.doc strong{color:var(--ink)}
+.doc em{font-style:normal;font-size:.9rem;color:var(--muted)}
+.doc a{overflow-wrap:anywhere;text-underline-offset:3px}
+.doc mark{padding:1px 6px;border-radius:6px;background:var(--butter);color:var(--butter-ink);font-weight:700}
+.back{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-weight:700;text-decoration:none;padding:8px 14px 8px 10px;border-radius:999px;background:var(--surface)}
+
+/* Squircle corners where the browser can draw them (the app uses
+   RoundedSuperellipseBorder). A squircle needs a larger radius to look the same. */
+@supports (corner-shape:squircle){
+  .card,.step,.qr-card,.qr,.private,.mock-file,.tag{corner-shape:squircle;border-radius:calc(var(--r) * 1.7)}
+}
+
+/* Wider screens */
+@media (min-width:600px){
+  .cards{grid-template-columns:repeat(3,1fr);gap:22px 20px}
+  .steps{max-width:470px}
+  .get [data-for=android] .btn,.get [data-for=ios] .btn{max-width:470px}
+  .get .meta,.status,.fine{max-width:470px}
+}
+@media (min-width:960px){
+  :root{--gutter:40px}
+  .top{padding-top:24px}
+  .brand img{width:132px}
+  .hero{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-areas:"copy art" "get art";column-gap:40px;padding-block:40px 80px;align-items:start}
+  .hero-art{grid-area:art;justify-self:center;align-self:center;width:100%;max-width:520px;aspect-ratio:1;margin:0}
+  .hero-art .a1{--w:56%;--t:-2%;--l:0%;--rt:auto;--rot:-8deg}
+  .hero-art .a4{display:block;--w:54%;--t:18%;--rt:-4%;--rot:7deg}
+  .hero-art .a2{--w:42%;--t:52%;--l:-2%;--rot:-6deg}
+  .hero-art .a5{display:block;--w:38%;--t:44%;--l:32%;--rot:4deg}
+  .hero-art .a3{--w:38%;--t:62%;--rt:2%;--rot:9deg}
+  .hero-copy .lede{font-size:1.25rem}
+  .get{margin-top:34px}
+  .features{padding-block:40px 56px}
+  .card{min-height:200px;padding:20px}
+  .wall{width:min(100% - 2 * var(--gutter),1240px)}
+  .wall li{margin:-14px -10px}
+  .wall img{height:var(--h,160px)}
+  .wall li:nth-child(3n){--h:180px}
+  .private{align-items:center;padding:30px 34px}
+}
+
+/* Motion: only when it's welcome, and every element ends where it would sit without it. */
+@media (prefers-reduced-motion:no-preference){
+  @view-transition{navigation:auto}
+  .hero-art picture{animation:stick .55s cubic-bezier(.2,1.5,.4,1) backwards;animation-delay:var(--d,0s)}
+  .hero-art .a1{--d:.05s}.hero-art .a4{--d:.12s}.hero-art .a2{--d:.2s}.hero-art .a5{--d:.26s}.hero-art .a3{--d:.32s}
+  @keyframes stick{from{scale:.55;translate:0 18px}}
+  @supports (animation-timeline:view()){
+    .wall li{animation:peel-in linear both;animation-timeline:view();animation-range:entry 0% cover 40%}
+    @keyframes peel-in{from{scale:.8;translate:0 30px;rotate:calc(var(--tilt) * -2)}}
+  }
+}
+
+@media (forced-colors:active){
+  .card,.step,.qr-card,.private,.btn{border:2px solid CanvasText}
+}
+</style>
+<!-- /shared-head -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Peel">
+<meta property="og:title" content="Peel: Sticker Maker">
+<meta property="og:description" content="Turn photos and videos into stickers, with sound. Free, no account, no ads.">
+<meta property="og:url" content="https://peel.example/">
+<meta property="og:image" content="https://peel.example/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Peel logo surrounded by stickers">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Peel: Sticker Maker","operatingSystem":"Android 7.0 or later","applicationCategory":"MultimediaApplication","softwareVersion":"1.0.0","url":"https://peel.example/","image":"https://peel.example/og.png","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+</head>
+<body>
+<a class="skip" href="#get">Skip to download</a>
+
+<header class="wrap top">
+  <a class="brand" href="/"><img src="/assets/img/wordmark.44e5ac0d.svg" width="112" height="62" alt="Peel"></a>
+  <span class="tag">Free</span>
+</header>
+
+<main id="main">
+  <section class="wrap hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title" class="display">Snap.<br>Peel.<br>Send.</h1>
+      <p class="lede">Turn photos and videos into stickers, with&nbsp;sound.</p>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <picture class="a1"><source type="image/avif" srcset="/assets/img/home_badge-200.bfd9553d.avif 200w, /assets/img/home_badge-400.b2777040.avif 400w" sizes="(min-width: 960px) 300px, 160px"><img src="/assets/img/home_badge-200.33d56d82.webp" srcset="/assets/img/home_badge-200.33d56d82.webp 200w, /assets/img/home_badge-400.86dbf57b.webp 400w" sizes="(min-width: 960px) 300px, 160px" width="200" height="200" alt="" fetchpriority="high" decoding="async"></picture>
+      <picture class="a4"><source type="image/avif" srcset="/assets/img/lol_same-200.5dc53002.avif 200w, /assets/img/lol_same-400.16418503.avif 400w" sizes="290px"><img src="/assets/img/lol_same-200.8a5ea787.webp" srcset="/assets/img/lol_same-200.8a5ea787.webp 200w, /assets/img/lol_same-400.31a88269.webp 400w" sizes="290px" width="200" height="155" alt="" loading="lazy" decoding="async"></picture>
+      <picture class="a2"><source type="image/avif" srcset="/assets/img/home_star-200.21e5403c.avif 200w, /assets/img/home_star-400.474899d5.avif 400w" sizes="(min-width: 960px) 220px, 120px"><img src="/assets/img/home_star-200.95b48eaf.webp" srcset="/assets/img/home_star-200.95b48eaf.webp 200w, /assets/img/home_star-400.930c0486.webp 400w" sizes="(min-width: 960px) 220px, 120px" width="200" height="200" alt="" decoding="async"></picture>
+      <picture class="a5"><source type="image/avif" srcset="/assets/img/dog-200.7be362bf.avif 200w, /assets/img/dog-400.5fed40d2.avif 400w" sizes="200px"><img src="/assets/img/dog-200.965ed301.webp" srcset="/assets/img/dog-200.965ed301.webp 200w, /assets/img/dog-400.215c3542.webp 400w" sizes="200px" width="200" height="200" alt="" loading="lazy" decoding="async"></picture>
+      <picture class="a3"><source type="image/avif" srcset="/assets/img/home_flame-200.de017a9f.avif 200w, /assets/img/home_flame-400.a53d0f5a.avif 400w" sizes="(min-width: 960px) 200px, 110px"><img src="/assets/img/home_flame-200.5b9de4d5.webp" srcset="/assets/img/home_flame-200.5b9de4d5.webp 200w, /assets/img/home_flame-400.314c5d80.webp 400w" sizes="(min-width: 960px) 200px, 110px" width="200" height="200" alt="" decoding="async"></picture>
+    </div>
+
+    <div class="get" id="get">
+      <div data-for="android">
+        <a class="btn btn-primary" href="/download/peel.apk" download="peel.apk" data-apk-link>
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>
+          Download for Android
+        </a>
+        <p class="meta">Version <span data-apk-version>1.0.0</span> · <span data-apk-size>20.6 MB</span> · Android 7+</p>
+        <p class="status" role="status"></p>
+        <ol class="steps" aria-label="How to install">
+          <li class="step mint" style="--tilt:-1.5deg">
+            <span class="mock" aria-hidden="true"><span class="mock-file"><svg class="i" viewBox="0 0 24 24"><path d="M7 3h7l5 5v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z"/><path d="M14 3v5h5"/></svg>peel.apk</span></span>
+            <span class="step-label">Open the file</span>
+          </li>
+          <li class="step butter" style="--tilt:1deg">
+            <span class="mock" aria-hidden="true"><span class="mock-toggle"></span></span>
+            <span class="step-label">Allow from this source</span>
+          </li>
+          <li class="step sky" style="--tilt:-1deg">
+            <span class="mock" aria-hidden="true"><span class="mock-install">Install</span></span>
+            <span class="step-label">Tap Install</span>
+          </li>
+        </ol>
+        <p class="fine">Warnings about .apk files are normal for apps from outside Google&nbsp;Play.</p>
+      </div>
+
+      <div data-for="ios">
+        <p class="btn btn-soon">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="3"/><path d="M11 18h2"/></svg>
+          App Store
+          <span class="tag">Soon</span>
+        </p>
+        <p class="meta">Peel for iPhone is on its way.</p>
+      </div>
+
+      <div data-for="desktop">
+        <div class="qr-card">
+          <div class="qr" id="qr" role="img" aria-label="QR code that opens this page"></div>
+          <div>
+            <p class="qr-title">Scan to get Peel on your phone</p>
+            <p class="meta">Android now. iPhone soon.</p>
+            <a href="/download/peel.apk" download="peel.apk">Download the APK (<span data-apk-size>20.6 MB</span>)</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap features" aria-labelledby="features-title">
+    <h2 id="features-title" class="title">Everything a sticker needs.</h2>
+    <ul class="cards">
+      <li class="card mint">
+        <span class="disc" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="4"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg></span>
+        <h3>Photo</h3>
+        <p>Cut-outs made on your phone</p>
+      </li>
+      <li class="card gum">
+        <span class="disc" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg></span>
+        <h3>Video</h3>
+        <p>Moving stickers from any clip</p>
+      </li>
+      <li class="card butter">
+        <span class="disc" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4z" fill="currentColor"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/></svg></span>
+        <h3>Sound</h3>
+        <p>Your voice or any audio file</p>
+      </li>
+      <li class="card sky">
+        <span class="disc" aria-hidden="true"><b>Aa</b></span>
+        <h3>Text</h3>
+        <p class="fonts" aria-hidden="true"><span class="f-bubble">yay!</span><span class="f-comic">lol</span><span class="f-round">omg</span><span class="f-classy">aww</span></p>
+        <p>Two sizes, four fonts</p>
+      </li>
+      <li class="card lilac">
+        <span class="disc" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></span>
+        <h3>Packs</h3>
+        <p>Name them, then add to WhatsApp in one tap</p>
+      </li>
+      <li class="card plain">
+        <span class="disc" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 4H7a3 3 0 0 0-3 3v9"/></svg></span>
+        <h3>Copy</h3>
+        <p>Paste into any chat. Moving ones go as GIFs.</p>
+      </li>
+    </ul>
+  </section>
+
+  <ul class="wrap wall" aria-label="Stickers made with Peel">
+    <li><picture><source type="image/avif" srcset="/assets/img/brb-200.ffdc8191.avif 200w, /assets/img/brb-400.624a6583.avif 400w" sizes="(min-width: 960px) 220px, 110px"><img src="/assets/img/brb-200.9dd33228.webp" srcset="/assets/img/brb-200.9dd33228.webp 200w, /assets/img/brb-400.2818b4cf.webp 400w" sizes="(min-width: 960px) 220px, 110px" width="200" height="174" alt="brb" loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/cat-200.d632659b.avif 200w, /assets/img/cat-400.e60896b1.avif 400w" sizes="(min-width: 960px) 190px, 100px"><img src="/assets/img/cat-200.e49d3660.webp" srcset="/assets/img/cat-200.e49d3660.webp 200w, /assets/img/cat-400.5e56eb71.webp 400w" sizes="(min-width: 960px) 190px, 100px" width="200" height="200" alt="Cat" loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/nope-200.54bc3079.avif 200w, /assets/img/nope-400.8163302b.avif 400w" sizes="(min-width: 960px) 220px, 120px"><img src="/assets/img/nope-200.b83fbf73.webp" srcset="/assets/img/nope-200.b83fbf73.webp 200w, /assets/img/nope-400.f639ea93.webp 400w" sizes="(min-width: 960px) 220px, 120px" width="200" height="174" alt="nope." loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/googly_eyes-200.20d94288.avif 200w, /assets/img/googly_eyes-400.83957d73.avif 400w" sizes="(min-width: 960px) 170px, 94px"><img src="/assets/img/googly_eyes-200.76c7545e.webp" srcset="/assets/img/googly_eyes-200.76c7545e.webp 200w, /assets/img/googly_eyes-400.87e22e10.webp 400w" sizes="(min-width: 960px) 170px, 94px" width="200" height="200" alt="Googly eyes" loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/running_late-200.69319302.avif 200w, /assets/img/running_late-400.2b8c10ab.avif 400w" sizes="(min-width: 960px) 220px, 110px"><img src="/assets/img/running_late-200.19f9c667.webp" srcset="/assets/img/running_late-200.19f9c667.webp 200w, /assets/img/running_late-400.69fa1cc0.webp 400w" sizes="(min-width: 960px) 220px, 110px" width="200" height="174" alt="Hello, I'm running late" loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/heart_ok-200.1072a3f2.avif 200w, /assets/img/heart_ok-400.d3be983b.avif 400w" sizes="(min-width: 960px) 190px, 100px"><img src="/assets/img/heart_ok-200.c4bce524.webp" srcset="/assets/img/heart_ok-200.c4bce524.webp 200w, /assets/img/heart_ok-400.7ff18b2e.webp 400w" sizes="(min-width: 960px) 190px, 100px" width="200" height="200" alt="Heart with a tick" loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/on_my_way-200.9765697b.avif 200w, /assets/img/on_my_way-400.fba9ab0c.avif 400w" sizes="(min-width: 960px) 220px, 110px"><img src="/assets/img/on_my_way-200.6d19a05a.webp" srcset="/assets/img/on_my_way-200.6d19a05a.webp 200w, /assets/img/on_my_way-400.e0c177c3.webp 400w" sizes="(min-width: 960px) 220px, 110px" width="200" height="174" alt="on my way" loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/cloud-200.efe107f3.avif 200w, /assets/img/cloud-400.79947555.avif 400w" sizes="(min-width: 960px) 170px, 94px"><img src="/assets/img/cloud-200.50036740.webp" srcset="/assets/img/cloud-200.50036740.webp 200w, /assets/img/cloud-400.96911037.webp 400w" sizes="(min-width: 960px) 170px, 94px" width="200" height="200" alt="Grumpy cloud" loading="lazy" decoding="async"></picture></li>
+    <li><picture><source type="image/avif" srcset="/assets/img/star-200.a96a798f.avif 200w, /assets/img/star-400.3fda9ea9.avif 400w" sizes="(min-width: 960px) 190px, 100px"><img src="/assets/img/star-200.d7f84155.webp" srcset="/assets/img/star-200.d7f84155.webp 200w, /assets/img/star-400.7921de93.webp 400w" sizes="(min-width: 960px) 190px, 100px" width="200" height="200" alt="Smiling star" loading="lazy" decoding="async"></picture></li>
+  </ul>
+
+  <section class="wrap">
+    <div class="private">
+      <span class="disc" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+      <div>
+        <h2>Private by design.</h2>
+        <p>No account, no ads, no tracking. Your photos never leave your phone.</p>
+        <a href="/privacy">Privacy policy</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap again">
+    <div class="get">
+      <div data-for="android">
+        <a class="btn btn-primary" href="/download/peel.apk" download="peel.apk" data-apk-link>
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>
+          Download for Android
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="wrap foot">
+  <nav aria-label="Footer"><a href="/privacy">Privacy</a><a href="#get">Download</a></nav>
+  <p>Peel isn’t made by or affiliated with WhatsApp or&nbsp;Meta.</p>
+  <p>© 2026 Peel</p>
+</footer>
+
+<script type="module">
+  const platform = document.documentElement.dataset.platform;
+
+  // Desktop: draw a QR code that opens this page on a phone.
+  if (platform === 'desktop') {
+    const box = document.getElementById('qr');
+    import('/assets/qr.4fb51745.js')
+      .then(({ qrSvg }) => { box.innerHTML = qrSvg(location.origin + '/'); })
+      .catch(() => box.closest('.qr-card').classList.add('no-qr'));
+  }
+
+  // Android: say where the file went once the download starts.
+  const status = document.querySelector('.status');
+  for (const link of document.querySelectorAll('[data-apk-link]')) {
+    link.addEventListener('click', () => {
+      status.textContent = 'Downloading… open it from your notifications.';
+    });
+  }
+</script>
+</body>
+</html>
