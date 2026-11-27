@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.webp binary
+*.jpg binary
+*.ttf binary
+*.jar binary
+app/third_party/** linguist-vendored
+app/packages/peel_native/lib/src/messages.g.dart linguist-generated
