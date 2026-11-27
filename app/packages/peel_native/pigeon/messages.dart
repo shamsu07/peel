@@ -150,4 +150,17 @@ abstract class PeelNativeApi {
   /// value a file holding that representation. For paste experiments.
   /// Android copies the first file.
   bool copyFilesToClipboard(Map<String, String> typeToPath);
+
+  /// Converts an animated WebP into another animated format for paste
+  /// experiments: "gif" or "heics" (animated HEIC with transparency).
+  /// Returns false where not supported (Android).
+  @async
+  bool convertAnimatedWebp(String webpPath, String outPath, String format);
+
+  /// The types on the clipboard's first item (no paste prompt).
+  List<String> clipboardTypes();
+
+  /// Saves each representation of the clipboard's first item into [outDir]
+  /// and returns type → file. iPhone may ask the user to allow pasting.
+  Map<String, String> saveClipboard(String outDir);
 }

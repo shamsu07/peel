@@ -571,6 +571,15 @@ protocol PeelNativeApi {
   /// value a file holding that representation. For paste experiments.
   /// Android copies the first file.
   func copyFilesToClipboard(typeToPath: [String: String]) throws -> Bool
+  /// Converts an animated WebP into another animated format for paste
+  /// experiments: "gif" or "heics" (animated HEIC with transparency).
+  /// Returns false where not supported (Android).
+  func convertAnimatedWebp(webpPath: String, outPath: String, format: String) async throws -> Bool
+  /// The types on the clipboard's first item (no paste prompt).
+  func clipboardTypes() throws -> [String]
+  /// Saves each representation of the clipboard's first item into [outDir]
+  /// and returns type → file. iPhone may ask the user to allow pasting.
+  func saveClipboard(outDir: String) throws -> [String: String]
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -720,6 +729,59 @@ class PeelNativeApiSetup {
       }
     } else {
       copyFilesToClipboardChannel.setMessageHandler(nil)
+    }
+    /// Converts an animated WebP into another animated format for paste
+    /// experiments: "gif" or "heics" (animated HEIC with transparency).
+    /// Returns false where not supported (Android).
+    let convertAnimatedWebpChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.peel_native.PeelNativeApi.convertAnimatedWebp\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      convertAnimatedWebpChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let webpPathArg = args[0] as! String
+        let outPathArg = args[1] as! String
+        let formatArg = args[2] as! String
+        Task { @MainActor in
+          do {
+            let result = try await api.convertAnimatedWebp(webpPath: webpPathArg, outPath: outPathArg, format: formatArg)
+            reply(wrapResult(result))
+          } catch {
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      convertAnimatedWebpChannel.setMessageHandler(nil)
+    }
+    /// The types on the clipboard's first item (no paste prompt).
+    let clipboardTypesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.peel_native.PeelNativeApi.clipboardTypes\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      clipboardTypesChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.clipboardTypes()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      clipboardTypesChannel.setMessageHandler(nil)
+    }
+    /// Saves each representation of the clipboard's first item into [outDir]
+    /// and returns type → file. iPhone may ask the user to allow pasting.
+    let saveClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.peel_native.PeelNativeApi.saveClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      saveClipboardChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let outDirArg = args[0] as! String
+        do {
+          let result = try api.saveClipboard(outDir: outDirArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      saveClipboardChannel.setMessageHandler(nil)
     }
   }
 }

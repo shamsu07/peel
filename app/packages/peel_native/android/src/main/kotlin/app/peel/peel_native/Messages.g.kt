@@ -587,6 +587,19 @@ interface PeelNativeApi {
    * Android copies the first file.
    */
   fun copyFilesToClipboard(typeToPath: Map<String, String>): Boolean
+  /**
+   * Converts an animated WebP into another animated format for paste
+   * experiments: "gif" or "heics" (animated HEIC with transparency).
+   * Returns false where not supported (Android).
+   */
+  suspend fun convertAnimatedWebp(webpPath: String, outPath: String, format: String): Boolean
+  /** The types on the clipboard's first item (no paste prompt). */
+  fun clipboardTypes(): List<String>
+  /**
+   * Saves each representation of the clipboard's first item into [outDir]
+   * and returns type → file. iPhone may ask the user to allow pasting.
+   */
+  fun saveClipboard(outDir: String): Map<String, String>
 
   companion object {
     /** The codec used by PeelNativeApi. */
@@ -738,6 +751,59 @@ interface PeelNativeApi {
             val typeToPathArg = args[0] as Map<String, String>
             val wrapped: List<Any?> = try {
               listOf(api.copyFilesToClipboard(typeToPathArg))
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.peel_native.PeelNativeApi.convertAnimatedWebp$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val webpPathArg = args[0] as String
+            val outPathArg = args[1] as String
+            val formatArg = args[2] as String
+            CoroutineScope(Dispatchers.Main).launch {
+              val wrapped: List<Any?> = try {
+                listOf(api.convertAnimatedWebp(webpPathArg, outPathArg, formatArg))
+              } catch (exception: Throwable) {
+                MessagesPigeonUtils.wrapError(exception)
+              }
+              reply.reply(wrapped)
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.peel_native.PeelNativeApi.clipboardTypes$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.clipboardTypes())
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.peel_native.PeelNativeApi.saveClipboard$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val outDirArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              listOf(api.saveClipboard(outDirArg))
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)
             }

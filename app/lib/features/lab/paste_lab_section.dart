@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../app_state.dart';
 import '../../core/design/tokens.dart';
@@ -12,11 +13,29 @@ import '../export/sticker_image.dart';
 /// Paste tests: copies a sticker to the clipboard in different forms, to
 /// find which ones WhatsApp pastes as a moving sticker or with sound.
 /// Copy one, paste it into a WhatsApp chat, and note what arrives.
-class PasteLabSection extends ConsumerWidget {
+class PasteLabSection extends ConsumerStatefulWidget {
   const PasteLabSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PasteLabSection> createState() => _PasteLabSectionState();
+}
+
+class _PasteLabSectionState extends ConsumerState<PasteLabSection> {
+  List<String>? _types;
+  Map<String, String>? _captured;
+
+  /// Converts the moving sticker to [format] once, then reuses the file.
+  Future<String?> _converted(String webp, String format) async {
+    final tmp = await getTemporaryDirectory();
+    final out = '${tmp.path}/paste_test.${format == 'gif' ? 'gif' : 'heics'}';
+    final ok = await ref
+        .read(nativeProvider)
+        .convertAnimatedWebp(webp, out, format);
+    return ok ? out : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final all = ref.watch(libraryProvider).value ?? const [];
     final moving = all.where((r) => r.kind == StickerKind.moving).firstOrNull;
     final withSound = all
@@ -25,7 +44,22 @@ class PasteLabSection extends ConsumerWidget {
     final library = ref.watch(libraryStoreProvider).value;
 
     Future<void> copy(String name, Map<String, String> types) async {
-      final ok = await ref.read(nativeProvider).copyFilesToClipboard(types);
+      // "gif:" / "heics:" values are converted from the WebP first.
+      final resolved = <String, String>{};
+      for (final e in types.entries) {
+        if (e.value.startsWith('gif:') || e.value.startsWith('heics:')) {
+          final i = e.value.indexOf(':');
+          final path = await _converted(
+            e.value.substring(i + 1),
+            e.value.substring(0, i),
+          );
+          if (path == null) continue;
+          resolved[e.key] = path;
+        } else {
+          resolved[e.key] = e.value;
+        }
+      }
+      final ok = await ref.read(nativeProvider).copyFilesToClipboard(resolved);
       if (context.mounted) {
         showPeelSnack(
           context,
@@ -48,6 +82,24 @@ class PasteLabSection extends ConsumerWidget {
         ),
         ('B', 'Moving: WebP as image', moving, {'public.image': webp}),
         ('C', 'Moving: Google WebP type', moving, {'com.google.webp': webp}),
+        ('G', 'Moving: as GIF', moving, {'com.compuserve.gif': 'gif:$webp'}),
+        (
+          'H',
+          'Moving: GIF + WebP',
+          moving,
+          {
+            'com.compuserve.gif': 'gif:$webp',
+            'org.webmproject.webp': webp,
+            'public.webp': webp,
+          },
+        ),
+        (
+          'I',
+          'Moving: iPhone sticker (HEICS)',
+          moving,
+          {'com.apple.sticker': 'heics:$webp', 'public.heics': 'heics:$webp'},
+        ),
+        ('J', 'Moving: HEICS only', moving, {'public.heics': 'heics:$webp'}),
       ]);
     }
     if (library != null && withSound != null) {
@@ -79,6 +131,47 @@ class PasteLabSection extends ConsumerWidget {
           '(moving sticker, still sticker, video, nothing).',
           style: PeelType.caption(),
         ),
+        const SizedBox(height: 12),
+        // Step 1 of copying WhatsApp: copy a moving sticker or GIF inside
+        // WhatsApp, come back here, read what it put on the clipboard.
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () async {
+                  final types = await ref.read(nativeProvider).clipboardTypes();
+                  setState(() => _types = types);
+                },
+                child: const Text('Read clipboard types'),
+              ),
+            ),
+            Expanded(
+              child: TextButton(
+                onPressed: () async {
+                  final tmp = await getTemporaryDirectory();
+                  final saved = await ref
+                      .read(nativeProvider)
+                      .saveClipboard('${tmp.path}/captured_clip');
+                  setState(() => _captured = saved);
+                },
+                child: const Text('Capture clipboard'),
+              ),
+            ),
+          ],
+        ),
+        if (_types != null)
+          SelectableText(
+            _types!.isEmpty ? '(clipboard empty)' : _types!.join('\n'),
+            style: PeelType.caption(color: PeelColors.ink),
+          ),
+        if (_captured != null && _captured!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: FilledButton(
+              onPressed: () => copy('Test K (replay)', _captured!),
+              child: Text('K: Replay captured (${_captured!.length} types)'),
+            ),
+          ),
         const SizedBox(height: 12),
         if (tests.isEmpty)
           Text(

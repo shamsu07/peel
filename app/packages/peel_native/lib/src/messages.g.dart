@@ -668,4 +668,64 @@ class PeelNativeApi {
     ;
     return pigeonVar_replyValue! as bool;
   }
+
+  /// Converts an animated WebP into another animated format for paste
+  /// experiments: "gif" or "heics" (animated HEIC with transparency).
+  /// Returns false where not supported (Android).
+  Future<bool> convertAnimatedWebp(String webpPath, String outPath, String format) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.peel_native.PeelNativeApi.convertAnimatedWebp$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[webpPath, outPath, format]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// The types on the clipboard's first item (no paste prompt).
+  Future<List<String>> clipboardTypes() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.peel_native.PeelNativeApi.clipboardTypes$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return (pigeonVar_replyValue! as List<Object?>).cast<String>();
+  }
+
+  /// Saves each representation of the clipboard's first item into [outDir]
+  /// and returns type → file. iPhone may ask the user to allow pasting.
+  Future<Map<String, String>> saveClipboard(String outDir) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.peel_native.PeelNativeApi.saveClipboard$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[outDir]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return (pigeonVar_replyValue! as Map<Object?, Object?>).cast<String, String>();
+  }
 }

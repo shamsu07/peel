@@ -53,4 +53,11 @@ class PeelNativePlugin : FlutterPlugin, PeelNativeApi {
 
     override fun copyFilesToClipboard(typeToPath: Map<String, String>): Boolean =
         typeToPath.values.firstOrNull()?.let { ClipboardTools.copy(context, it) } ?: false
+
+    // Paste experiments are iPhone-only for now.
+    override suspend fun convertAnimatedWebp(webpPath: String, outPath: String, format: String): Boolean = false
+
+    override fun clipboardTypes(): List<String> = emptyList()
+
+    override fun saveClipboard(outDir: String): Map<String, String> = emptyMap()
 }

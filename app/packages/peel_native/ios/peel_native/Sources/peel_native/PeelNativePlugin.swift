@@ -312,6 +312,74 @@ public class PeelNativePlugin: NSObject, FlutterPlugin, PeelNativeApi {
     return true
   }
 
+  // MARK: Paste experiments
+
+  /// Re-encodes an animated WebP as an animated GIF or HEICS (HEIC image
+  /// sequence, keeps transparency), keeping each frame's timing.
+  func convertAnimatedWebp(webpPath: String, outPath: String, format: String) async throws -> Bool {
+    try await Task.detached(priority: .userInitiated) {
+      let gif = format == "gif"
+      guard
+        let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: webpPath) as CFURL, nil)
+      else { return false }
+      let count = CGImageSourceGetCount(src)
+      let type = (gif ? UTType.gif.identifier : "public.heics") as CFString
+      try? FileManager.default.removeItem(atPath: outPath)
+      guard count > 0,
+        let dest = CGImageDestinationCreateWithURL(
+          URL(fileURLWithPath: outPath) as CFURL, type, count, nil)
+      else { return false }
+      let loop: [CFString: Any] =
+        gif
+        ? [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]]
+        : [kCGImagePropertyHEICSDictionary: [kCGImagePropertyHEICSLoopCount: 0]]
+      CGImageDestinationSetProperties(dest, loop as CFDictionary)
+      for i in 0..<count {
+        guard let frame = CGImageSourceCreateImageAtIndex(src, i, nil) else { continue }
+        let props = CGImageSourceCopyPropertiesAtIndex(src, i, nil) as? [CFString: Any]
+        let webp = props?[kCGImagePropertyWebPDictionary] as? [CFString: Any]
+        let delay =
+          (webp?[kCGImagePropertyWebPUnclampedDelayTime] as? Double)
+          ?? (webp?[kCGImagePropertyWebPDelayTime] as? Double) ?? 0.1
+        let frameProps: [CFString: Any] =
+          gif
+          ? [
+            kCGImagePropertyGIFDictionary: [
+              kCGImagePropertyGIFDelayTime: delay, kCGImagePropertyGIFUnclampedDelayTime: delay,
+            ]
+          ]
+          : [
+            kCGImagePropertyHEICSDictionary: [
+              kCGImagePropertyHEICSDelayTime: delay,
+              kCGImagePropertyHEICSUnclampedDelayTime: delay,
+            ]
+          ]
+        CGImageDestinationAddImage(dest, frame, frameProps as CFDictionary)
+      }
+      return CGImageDestinationFinalize(dest)
+    }.value
+  }
+
+  /// Types on the clipboard's first item. Reading types doesn't ask the
+  /// user for permission; reading the data does.
+  func clipboardTypes() throws -> [String] {
+    UIPasteboard.general.types
+  }
+
+  /// Saves each representation of the clipboard's first item to [outDir].
+  func saveClipboard(outDir: String) throws -> [String: String] {
+    let dir = URL(fileURLWithPath: outDir)
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    var saved: [String: String] = [:]
+    for (i, type) in UIPasteboard.general.types.enumerated() {
+      guard let data = UIPasteboard.general.data(forPasteboardType: type) else { continue }
+      let url = dir.appendingPathComponent("clip_\(i).bin")
+      try data.write(to: url)
+      saved[type] = url.path
+    }
+    return saved
+  }
+
   func copyFilesToClipboard(typeToPath: [String: String]) throws -> Bool {
     var item: [String: Any] = [:]
     for (type, path) in typeToPath {
