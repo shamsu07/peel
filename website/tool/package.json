@@ -8,9 +8,9 @@
     "build": "node build.mjs"
   },
   "devDependencies": {
-    "esbuild": "^0.25.12",
-    "qrcode-generator": "^1.4.4",
-    "sharp": "^0.34.0",
+    "esbuild": "^0.28.2",
+    "qrcode-generator": "^2.0.4",
+    "sharp": "^0.35.5",
     "subset-font": "^2.4.0"
   }
 }
