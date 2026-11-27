@@ -3,3 +3,8 @@
 build/
 *.iml
 .idea/
+
+# Website: the APK is built locally (website/tool/build_apk.sh) and never committed.
+website/public/download/
+website/tool/node_modules/
+.vercel/
