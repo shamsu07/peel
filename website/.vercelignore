@@ -1,6 +1,4 @@
-# Keep the build tools out of CLI uploads. (Unanchored names, so this works
-# whether Vercel reads it from the repo root or from website/.) Git deploys
-# only see tracked files; the APK isn't tracked, see README "Deploy".
-tool
+# Leave out what the site doesn't need. Unanchored names, so this works
+# whether Vercel reads it from the repo root or from website/.
+node_modules
 README.md
-site.config.json

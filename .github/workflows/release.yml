@@ -6,6 +6,13 @@
 #   ANDROID_KEYSTORE_PASSWORD
 #   ANDROID_KEY_ALIAS
 #   ANDROID_KEY_PASSWORD
+# Optional:
+#   VERCEL_DEPLOY_HOOK        a Vercel deploy hook URL, so the website
+#                             picks up the new version and size at once
+#
+# The APK is always attached as peel.apk, so
+# https://github.com/shamsu07/peel/releases/latest/download/peel.apk
+# (where the website's download button points) is always the newest.
 name: Release
 
 on:
@@ -60,7 +67,7 @@ jobs:
             --obfuscate --split-debug-info=build/symbols/apk
           flutter build appbundle --release \
             --obfuscate --split-debug-info=build/symbols/aab
-          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/peel-${GITHUB_REF_NAME}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/peel.apk"
           cp build/app/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/peel-${GITHUB_REF_NAME}.aab"
           tar -czf "$RUNNER_TEMP/peel-${GITHUB_REF_NAME}-symbols.tar.gz" build/symbols
       - name: Publish the GitHub release
@@ -69,9 +76,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" --generate-notes --title "Peel $GITHUB_REF_NAME" \
-            "$RUNNER_TEMP/peel-${GITHUB_REF_NAME}.apk" \
+            "$RUNNER_TEMP/peel.apk#Android app (arm64)" \
             "$RUNNER_TEMP/peel-${GITHUB_REF_NAME}.aab" \
             "$RUNNER_TEMP/peel-${GITHUB_REF_NAME}-symbols.tar.gz"
+      - name: Refresh the website
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$HOOK" ]; then curl -fsS -X POST "$HOOK" > /dev/null; else echo "No VERCEL_DEPLOY_HOOK; the site updates on its next deploy."; fi
       - name: Clean up the key
         if: always()
         run: rm -f android/key.properties "$RUNNER_TEMP/upload.jks"

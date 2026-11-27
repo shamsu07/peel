@@ -43,23 +43,15 @@
           "value": "public, max-age=86400, stale-while-revalidate=604800"
         }
       ]
-    },
+    }
+  ],
+  "buildCommand": "node tool/build.mjs",
+  "installCommand": "",
+  "redirects": [
     {
       "source": "/download/peel.apk",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/vnd.android.package-archive"
-        },
-        {
-          "key": "Content-Disposition",
-          "value": "attachment; filename=\"peel.apk\""
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
+      "destination": "https://github.com/shamsu07/peel/releases/latest/download/peel.apk",
+      "permanent": false
     }
   ]
 }

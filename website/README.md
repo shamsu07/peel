@@ -128,49 +128,39 @@ Play, and warn them that this deletes their stickers.
 
 ## Deploy
 
-The APK isn't in git, so deploy with the Vercel CLI from your machine,
-after building it:
+The site deploys from GitHub: Vercel builds every push to `main`, with
+**Root Directory** `website`. Its build step runs `node tool/build.mjs`.
 
-```bash
-website/tool/build_apk.sh
-```
+The APK lives on **GitHub Releases**, not on Vercel:
 
-```bash
-cd website && npx vercel deploy --prod
-```
+- `vercel.json` redirects `/download/peel.apk` to
+  `https://github.com/shamsu07/peel/releases/latest/download/peel.apk`.
+- At each deploy, `build.mjs` asks GitHub for the latest release and writes
+  its version and the size of its `peel.apk` into the page. If GitHub can't
+  be reached, the build keeps the last values.
 
-The first run asks you to log in and link a project. Accept the defaults:
-`vercel.json` sets "Other" as the framework, no build command, and
-`public` as the output folder. `.vercelignore` limits the upload to
-`public/` and `vercel.json`, about 22 MB in total.
+### Releasing a new APK
 
-Then check that the APK is served with the right headers:
+1. Raise `version:` in `app/pubspec.yaml` (and `appVersion` in
+   `app/lib/core/build_info.dart`), commit and push.
+2. Tag it: `git tag v1.0.1 && git push origin v1.0.1`.
+3. The **Release** workflow builds a signed APK and bundle and attaches
+   them to a GitHub release, with the APK always named `peel.apk`.
+4. If the `VERCEL_DEPLOY_HOOK` secret is set, the workflow redeploys the
+   site so the new version and size show at once. Otherwise they appear on
+   the next push to `main`.
 
-```bash
-curl -sI https://your-domain.example/download/peel.apk
-```
+The workflow needs the Android upload key as repository secrets
+(`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`); see the comment at the top
+of `.github/workflows/release.yml`. Until the first release exists, the
+download button leads to GitHub's 404 page.
 
-Expect `content-type: application/vnd.android.package-archive` and
-`content-disposition: attachment; filename="peel.apk"`.
+### Trying an APK before releasing it
 
-If you connect the GitHub repo to Vercel instead (root directory
-`website`), the page deploys but the APK doesn't, because it isn't in git.
-Use GitHub Releases for the file in that case (see below).
-
-### Limits, and when to use GitHub Releases
-
-- **Upload size.** On the Hobby plan, a CLI deploy can upload at most
-  100 MB of files. The APK is about 21 MB, so there's plenty of room.
-  `build.mjs` warns if the APK passes 90 MB.
-- **Bandwidth.** Hobby includes about 100 GB of transfer a month, roughly
-  4,800 downloads of a 21 MB APK.
-
-If either limit becomes a problem, attach `peel.apk` to a GitHub Release
-of a **public** repository and change the three `href="/download/peel.apk"`
-links in `public/index.html` to
-`https://github.com/<owner>/<repo>/releases/latest/download/peel.apk`.
-GitHub serves it as a generic download. Android browsers still save it as
-an `.apk` and open the installer.
+`tool/build_apk.sh` builds one into `public/download/peel.apk` (git ignores
+it). Install it from there with `adb install`; the live site always
+serves the GitHub release.
 
 ## Search and sharing
 

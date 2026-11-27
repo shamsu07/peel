@@ -2,8 +2,10 @@
 //
 //   node website/tool/build.mjs [--site https://your.domain] [--contact you@your.domain]
 //
-// - Writes the APK's version (from app/pubspec.yaml) and size (from
-//   public/download/peel.apk) into the page.
+// - Writes the APK's version and size into the page: from the latest
+//   GitHub release (where the download button points), or from a local
+//   public/download/peel.apk and app/pubspec.yaml when there's no release.
+//   Vercel runs this on every deploy, so the page matches the release.
 // - Builds public/privacy.html from docs/store/privacy-policy.md.
 // - Points canonical, share and structured-data links at the site URL in
 //   website/site.config.json, and writes robots.txt and sitemap.xml for it.
@@ -47,14 +49,19 @@ async function main() {
 
   // ---------------------------------------------------------- APK details
   const pubspec = await readFile(join(repo, 'app', 'pubspec.yaml'), 'utf8');
-  const version = pubspec.match(/^version:\s*([0-9.]+)/m)?.[1];
+  let version = pubspec.match(/^version:\s*([0-9.]+)/m)?.[1];
   if (!version) throw new Error('No version: line in app/pubspec.yaml');
   index = index.replace(/(<span data-apk-version>)[^<]*(<\/span>)/g, `$1${version}$2`);
 
+  const release = await latestRelease(config.githubRepo);
   const apk = join(pub, 'download', 'peel.apk');
-  const size = await stat(apk).then((s) => s.size, () => null);
+  const size = release?.size ?? (await stat(apk).then((s) => s.size, () => null));
+  if (release) {
+    version = release.version;
+    index = index.replace(/(<span data-apk-version>)[^<]*(<\/span>)/g, `$1${version}$2`);
+  }
   if (size == null) {
-    console.warn('! public/download/peel.apk is missing: run tool/build_apk.sh. Keeping the old size.');
+    console.warn('! No GitHub release with peel.apk yet, and no local APK. Keeping the old size.');
   } else {
     const mb = `${(size / 1e6).toFixed(1)} MB`;
     index = index.replace(/(<span data-apk-size>)[^<]*(<\/span>)/g, `$1${mb}$2`);
@@ -123,6 +130,27 @@ async function main() {
   );
 
   console.log('Updated index.html, privacy.html, site.webmanifest, robots.txt and sitemap.xml in public/.');
+}
+
+/**
+ * The newest GitHub release's version and peel.apk size, or null when
+ * there's none or GitHub can't be reached (the build then keeps going).
+ */
+async function latestRelease(repo) {
+  if (!repo) return null;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'peel-website-build' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const asset = json.assets?.find((a) => a.name === 'peel.apk');
+    if (!asset) return null;
+    return { version: json.tag_name.replace(/^v/, ''), size: asset.size };
+  } catch {
+    return null;
+  }
 }
 
 /**

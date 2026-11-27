@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds the Android APK for direct download and puts it on the website.
+# Builds the Android APK locally, for trying it before a release. The live
+# site serves the APK from GitHub Releases (see website/README.md).
 #
 #   website/tool/build_apk.sh [--site https://your.domain] [--contact you@your.domain]
 #
