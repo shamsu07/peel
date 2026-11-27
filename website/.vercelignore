@@ -1,5 +1,6 @@
-# Upload only what the site serves. The APK in public/download is ignored
-# by git but must be uploaded, so this list is explicit.
-/*
-!public
-!vercel.json
+# Keep the build tools out of CLI uploads. (Unanchored names, so this works
+# whether Vercel reads it from the repo root or from website/.) Git deploys
+# only see tracked files; the APK isn't tracked, see README "Deploy".
+tool
+README.md
+site.config.json
