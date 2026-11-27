@@ -5,10 +5,14 @@
 // - Writes the APK's version (from app/pubspec.yaml) and size (from
 //   public/download/peel.apk) into the page.
 // - Builds public/privacy.html from docs/store/privacy-policy.md.
-// - With --site (or SITE_URL), points canonical and share links at that
-//   domain. The choice is remembered in the HTML, so later runs keep it.
-// - With --contact (or SUPPORT_EMAIL), fills the policy's contact line.
-//   Without it, the placeholder from the Markdown stays, highlighted.
+// - Points canonical, share and structured-data links at the site URL in
+//   website/site.config.json, and writes robots.txt and sitemap.xml for it.
+// - Fills the policy's contact line from supportEmail in the same file.
+//   While it's empty, the placeholder from the Markdown stays, highlighted.
+// - Writes the JSON-LD (app, source code and FAQ) from the page itself.
+//
+// --site and --contact (or SITE_URL and SUPPORT_EMAIL) override the config
+// and are saved back to it.
 //
 // build_apk.sh runs this for you after each APK build.
 
@@ -21,6 +25,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const site = join(here, '..');
 const pub = join(site, 'public');
 const repo = join(site, '..');
+const configPath = join(site, 'site.config.json');
 
 const { values: args } = parseArgs({
   options: { site: { type: 'string' }, contact: { type: 'string' } },
@@ -33,12 +38,18 @@ async function main() {
   const indexPath = join(pub, 'index.html');
   let index = await readFile(indexPath, 'utf8');
 
+  const config = JSON.parse(await readFile(configPath, 'utf8'));
+  const siteArg = args.site ?? process.env.SITE_URL;
+  const contactArg = args.contact ?? process.env.SUPPORT_EMAIL;
+  if (siteArg) config.siteUrl = siteArg.replace(/\/+$/, '');
+  if (contactArg) config.supportEmail = contactArg;
+  if (siteArg || contactArg) await writeFile(configPath, JSON.stringify(config, null, 2) + '\n');
+
   // ---------------------------------------------------------- APK details
   const pubspec = await readFile(join(repo, 'app', 'pubspec.yaml'), 'utf8');
   const version = pubspec.match(/^version:\s*([0-9.]+)/m)?.[1];
   if (!version) throw new Error('No version: line in app/pubspec.yaml');
   index = index.replace(/(<span data-apk-version>)[^<]*(<\/span>)/g, `$1${version}$2`);
-  index = index.replace(/("softwareVersion":")[^"]*(")/, `$1${version}$2`);
 
   const apk = join(pub, 'download', 'peel.apk');
   const size = await stat(apk).then((s) => s.size, () => null);
@@ -56,18 +67,38 @@ async function main() {
   // ---------------------------------------------------------- site URL
   const current = index.match(/<link rel="canonical" href="(https?:\/\/[^/"]+)\/">/)?.[1];
   if (!current) throw new Error('No canonical link in index.html');
-  const wanted = (args.site ?? process.env.SITE_URL ?? current).replace(/\/+$/, '');
-  if (!/^https:\/\/[^/]+$/.test(wanted)) throw new Error(`--site must look like https://example.com, got ${wanted}`);
+  const wanted = config.siteUrl;
+  if (!/^https:\/\/[^/]+$/.test(wanted)) throw new Error(`siteUrl must look like https://example.com, got ${wanted}`);
   index = index.split(current).join(wanted);
   if (wanted.endsWith('.example')) {
-    console.warn(`! Share links point at ${wanted}. Pass --site https://your.domain once you know it.`);
+    console.warn(`! Links point at ${wanted}. Set siteUrl in site.config.json (or pass --site) once you know the domain.`);
   }
+
+  // ---------------------------------------------------------- structured data
+  const sizeText = index.match(/<span data-apk-size>([^<]*)<\/span>/)?.[1];
+  index = index.replace(
+    /(<script type="application\/ld\+json" id="structured-data">)[\s\S]*?(<\/script>)/,
+    (_, open, close) => `${open}\n${JSON.stringify(structuredData(index, wanted, version, sizeText), null, 1)}\n${close}`,
+  );
 
   await writeFile(indexPath, index);
 
+  // ---------------------------------------------------------- crawling
+  const today = new Date().toISOString().slice(0, 10);
+  await writeFile(join(pub, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${wanted}/sitemap.xml\n`);
+  await writeFile(
+    join(pub, 'sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${wanted}/</loc><lastmod>${today}</lastmod></url>
+  <url><loc>${wanted}/privacy</loc><lastmod>${today}</lastmod></url>
+</urlset>
+`,
+  );
+
   // ---------------------------------------------------------- privacy page
   const md = await readFile(join(repo, 'docs', 'store', 'privacy-policy.md'), 'utf8');
-  const contact = args.contact ?? process.env.SUPPORT_EMAIL;
+  const contact = config.supportEmail || undefined;
   await writeFile(join(pub, 'privacy.html'), privacyPage(index, markdown(md, contact), wanted));
 
   // ---------------------------------------------------------- manifest
@@ -91,8 +122,75 @@ async function main() {
     ) + '\n',
   );
 
-  console.log('Updated public/index.html, public/privacy.html and public/site.webmanifest.');
+  console.log('Updated index.html, privacy.html, site.webmanifest, robots.txt and sitemap.xml in public/.');
 }
+
+/**
+ * JSON-LD for search engines, read from the page so it can't drift from
+ * what people see: the app, its source code and the FAQ.
+ */
+function structuredData(index, origin, version, size) {
+  const meta = (name) => decode(index.match(new RegExp(`<meta name="${name}" content="([^"]*)"`))?.[1] ?? '');
+  const repoUrl = index.match(/href="([^"]+)" data-repo/)?.[1];
+  if (!repoUrl) throw new Error('No GitHub link (data-repo) in index.html');
+  const faq = [...index.matchAll(/<details class="qa"[^>]*>\s*<summary>([\s\S]*?)<\/summary>\s*<div class="qa-a">([\s\S]*?)<\/div>/g)].map(
+    ([, q, a]) => ({
+      '@type': 'Question',
+      name: text(q),
+      acceptedAnswer: { '@type': 'Answer', text: text(a) },
+    }),
+  );
+  const license = 'https://opensource.org/license/mit';
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'WebSite', '@id': `${origin}/#website`, url: `${origin}/`, name: 'Peel', inLanguage: 'en' },
+      {
+        '@type': 'SoftwareApplication',
+        '@id': `${origin}/#app`,
+        name: 'Peel: Sticker Maker',
+        alternateName: 'Peel',
+        description: meta('description'),
+        url: `${origin}/`,
+        image: `${origin}/og.png`,
+        applicationCategory: 'MultimediaApplication',
+        applicationSubCategory: 'Sticker maker',
+        operatingSystem: 'Android 7.0 or later',
+        softwareVersion: version,
+        fileSize: size,
+        downloadUrl: `${origin}/download/peel.apk`,
+        isAccessibleForFree: true,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        license,
+        sameAs: [repoUrl],
+        featureList: [
+          'Photo to sticker with automatic on-device cut-outs',
+          'Video to moving sticker',
+          'Text in two sizes',
+          'Stickers with sound',
+          'Named sticker packs',
+          'Add to WhatsApp',
+          'Light and dark mode',
+        ],
+      },
+      {
+        '@type': 'SoftwareSourceCode',
+        '@id': `${origin}/#source`,
+        name: 'Peel',
+        codeRepository: repoUrl,
+        license,
+        programmingLanguage: 'Dart',
+        runtimePlatform: 'Flutter',
+        targetProduct: { '@id': `${origin}/#app` },
+      },
+      { '@type': 'FAQPage', '@id': `${origin}/#faq`, mainEntity: faq },
+    ],
+  };
+}
+
+const text = (html) => decode(html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim());
+const decode = (s) =>
+  s.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
 /** The privacy page: the home page's head and styles, the policy as the body. */
 function privacyPage(index, body, origin) {
@@ -113,6 +211,7 @@ ${shared}
 <meta property="og:title" content="Peel privacy policy">
 <meta property="og:url" content="${origin}/privacy">
 <meta property="og:image" content="${origin}/og.png">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>

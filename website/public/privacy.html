@@ -21,9 +21,17 @@
   // "coming soon", everything else gets a QR code. Runs before first paint.
   (function () {
     var n = navigator, ua = n.userAgent, p = 'desktop';
+    // A touch-only screen with a desktop user agent is a phone in "Desktop
+    // site" mode: it must never get the QR code meant for laptops.
+    var touchOnly = n.maxTouchPoints > 0 && matchMedia('(hover: none) and (pointer: coarse)').matches;
     if ((n.userAgentData && n.userAgentData.platform === 'Android') || /Android/i.test(ua)) p = 'android';
-    else if (/iPhone|iPad|iPod/.test(ua) || (n.platform === 'MacIntel' && n.maxTouchPoints > 1)) p = 'ios';
+    else if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && n.maxTouchPoints > 1)) p = 'ios';
+    else if (touchOnly && /Linux/.test(ua)) p = 'android';
     document.documentElement.dataset.platform = p;
+    // In-app browsers (Instagram, Facebook, TikTok…) often can't save files.
+    if (p === 'android' && /; wv\)|FBAN|FBAV|Instagram|musical_ly|Bytedance|LinkedInApp|Snapchat|Line\//.test(ua)) {
+      document.documentElement.dataset.inapp = '';
+    }
   })();
 </script>
 <style>
@@ -87,7 +95,8 @@ a{color:inherit}
 /* Hero */
 .hero{display:grid;grid-template-areas:"copy" "get";position:relative;padding-block:14px 40px}
 .hero-copy{grid-area:copy;position:relative;z-index:1}
-.hero-copy .lede{margin-top:18px}
+.hero-copy h1>span{display:block}
+.hero-copy .lede{margin-top:18px;font-size:1.0625rem;font-weight:400;line-height:1.4;letter-spacing:0}
 .hero-art{grid-area:copy;justify-self:end;align-self:start;position:relative;width:min(56%,260px);aspect-ratio:1.1;margin:-12px -10px 0 0;pointer-events:none}
 .hero-art picture{position:absolute;width:var(--w);top:var(--t);left:var(--l,auto);right:var(--rt,auto);rotate:var(--rot)}
 .hero-art img{width:100%}
@@ -111,8 +120,36 @@ html:not([data-platform]) .get>[data-for=android],
 .btn-soon{position:relative;background:var(--track);color:var(--muted-strong)}
 .btn-soon .tag{position:absolute;top:-12px;right:22px;background:var(--butter);color:var(--butter-ink)}
 .get .meta{margin-top:10px;text-align:center}
-.status{min-height:1.35em;margin-top:2px;font-size:.84rem;font-weight:700;text-align:center;color:var(--ink)}
-.status:empty{min-height:0}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* After the tap: the button steps back, a short note says what's happening,
+   and the steps light up in order. The page can't see the download, so it
+   says what to expect instead of faking progress. */
+.dl{display:grid;scroll-margin-top:16px}
+.dl>*{grid-area:1/1}
+.dl .meta{grid-row:2}
+.started{grid-row:1;display:flex;align-items:center;gap:12px;min-height:58px;padding:8px 18px 8px 10px;border-radius:999px;background:var(--mint);color:var(--mint-ink);visibility:hidden;opacity:0;scale:.96}
+.started .tick{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:50%;background:#fff}
+.started .tick .i{width:22px;height:22px;stroke-width:3}
+.started p{display:flex;flex-direction:column;font-size:.82rem;line-height:1.3}
+.started strong{font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.is-started .started{visibility:visible;opacity:1;scale:1}
+.is-started .dl>.btn{visibility:hidden;opacity:0;scale:.96}
+.again-link{display:none;grid-row:3;justify-self:center;margin-top:2px;padding:8px 12px;font-size:.84rem;font-weight:700;color:var(--ink);text-underline-offset:3px}
+.is-started .again-link{display:block}
+.is-started .dl .meta{display:none}
+.inapp-note{display:none}
+[data-inapp] .inapp-note{display:block}
+[data-inapp] .dl{display:none}
+.inapp-note .meta a{font-weight:700;color:var(--ink);text-underline-offset:3px}
+.step.is-now{box-shadow:0 0 0 3px var(--ink),var(--shadow)}
+.step.is-now::after{content:"Now";position:absolute;top:-12px;right:-6px;padding:2px 8px;border-radius:999px;background:var(--ink);color:var(--surface);font-size:.68rem;font-weight:800;letter-spacing:.04em;rotate:6deg}
+
+/* Thumb-reach download bar, once the main button has scrolled away. */
+.dock{position:fixed;inset:auto 0 0;z-index:5;display:none;padding:12px var(--gutter) max(12px,env(safe-area-inset-bottom));background:linear-gradient(to top,var(--paper) 55%,transparent);translate:0 110%;transition:translate .3s cubic-bezier(.2,.9,.3,1),visibility 0s .3s;visibility:hidden}
+[data-platform=android]:not([data-inapp]) .dock{display:block}
+.dock.is-on{translate:0 0;visibility:visible;transition:translate .3s cubic-bezier(.2,.9,.3,1)}
+.dock .btn{max-width:470px;margin-inline:auto;box-shadow:0 10px 24px rgb(17 17 19 / .22)}
 
 /* Install steps: three small die-cut tiles with a hint of the real screen. */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;counter-reset:step}
@@ -120,8 +157,8 @@ html:not([data-platform]) .get>[data-for=android],
 .step::before{content:counter(step);position:absolute;top:-11px;left:-9px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--on-pastel);color:#fff;border:3px solid var(--edge);font-size:.8rem;font-weight:800;rotate:-6deg}
 .step-label{font-size:.82rem;font-weight:700;line-height:1.2;color:var(--pair-ink);text-wrap:balance}
 .mock{display:grid;place-items:center;height:40px;width:100%}
-.mock-file{display:flex;align-items:center;gap:5px;max-width:100%;padding:6px 8px;background:#fff;color:var(--on-pastel);--r:10px;border-radius:var(--r);font-size:.7rem;font-weight:700}
-.mock-file .i{width:15px;height:15px;color:var(--mint-ink)}
+.mock-file{display:flex;align-items:center;gap:7px;max-width:100%;padding:6px 8px 6px 9px;background:#2B2B31;color:#fff;--r:8px;border-radius:var(--r);font-size:.66rem;font-weight:600;white-space:nowrap}
+.mock-file b{color:#A8C7FA;font-weight:800}
 .mock-toggle{position:relative;width:46px;height:26px;border-radius:999px;background:var(--butter-ink)}
 .mock-toggle::after{content:"";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:#fff}
 .mock-install{padding:6px 14px;border-radius:999px;background:var(--on-pastel);color:#fff;font-size:.72rem;font-weight:700}
@@ -178,13 +215,31 @@ html:not([data-platform]) .get>[data-for=android],
 .private .disc{background:var(--ink);color:var(--surface);flex:none}
 .private h2{font-size:1.6rem;font-weight:800;letter-spacing:-.04em;line-height:1.05}
 .private p{margin-top:6px;color:var(--muted);text-wrap:pretty}
-.private a{display:inline-block;margin-top:10px;font-weight:700;font-size:.95rem;text-underline-offset:3px}
+.private .links{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:14px}
+.private a{font-weight:700;font-size:.95rem;text-underline-offset:3px}
+.btn-quiet{display:inline-flex;min-height:46px;padding:0 18px;gap:8px;background:var(--paper);color:var(--ink);font-size:.95rem;transition:background-color .15s ease}
+.btn-quiet:hover{background:var(--track)}
+.i.gh{fill:currentColor;stroke:none;width:20px;height:20px}
+
+/* FAQ: flat, quiet, one tap to open. */
+.faq{padding-top:48px}
+.faq .title{margin-bottom:20px}
+.faq-list{display:grid;gap:10px;max-width:46rem}
+.qa{background:var(--surface);--r:22px;border-radius:var(--r)}
+.qa summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;padding:14px 20px;font-weight:700;letter-spacing:-.01em;cursor:pointer;list-style:none;border-radius:var(--r)}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{content:"";flex:none;width:10px;height:10px;margin-right:4px;border-right:2.5px solid currentColor;border-bottom:2.5px solid currentColor;rotate:45deg;translate:0 -3px;transition:rotate .2s ease,translate .2s ease}
+.qa[open] summary::after{rotate:225deg;translate:0 3px}
+.qa-a{padding:0 20px 18px;color:var(--muted);text-wrap:pretty}
+.qa-a a{color:var(--ink);font-weight:700;text-underline-offset:3px}
 
 .again{padding-top:28px}
 
 /* Footer */
 .foot{display:flex;flex-direction:column;gap:6px;padding-block:36px max(28px,env(safe-area-inset-bottom));font-size:.8rem;line-height:1.35;color:var(--muted)}
-.foot nav{display:flex;gap:18px}
+.foot nav{display:flex;flex-wrap:wrap;gap:4px 18px;margin-bottom:6px}
+.foot .gh-link{display:inline-flex;align-items:center;gap:6px}
+.foot .i.gh{width:16px;height:16px}
 .foot a{font-weight:700;color:var(--muted-strong);text-underline-offset:3px;padding-block:4px}
 
 /* Privacy page */
@@ -203,7 +258,7 @@ html:not([data-platform]) .get>[data-for=android],
 /* Squircle corners where the browser can draw them (the app uses
    RoundedSuperellipseBorder). A squircle needs a larger radius to look the same. */
 @supports (corner-shape:squircle){
-  .card,.step,.qr-card,.qr,.private,.mock-file,.tag{corner-shape:squircle;border-radius:calc(var(--r) * 1.7)}
+  .card,.step,.qr-card,.qr,.private,.mock-file,.tag,.qa,.qa summary{corner-shape:squircle;border-radius:calc(var(--r) * 1.7)}
 }
 
 /* Wider screens */
@@ -238,6 +293,12 @@ html:not([data-platform]) .get>[data-for=android],
 /* Motion: only when it's welcome, and every element ends where it would sit without it. */
 @media (prefers-reduced-motion:no-preference){
   @view-transition{navigation:auto}
+  .started,.dl>.btn{transition:opacity .22s ease,scale .22s ease,visibility 0s .22s}
+  .is-started .started{transition:opacity .22s ease .08s,scale .3s cubic-bezier(.2,1.5,.4,1) .08s,visibility 0s}
+  .is-started .tick{animation:pop .45s cubic-bezier(.2,1.6,.4,1) .1s backwards}
+  @keyframes pop{from{scale:0}}
+  .is-started .step{animation:lift .5s cubic-bezier(.2,1.4,.4,1) calc(.25s + var(--i) * .12s) backwards}
+  @keyframes lift{from{translate:0 10px;scale:.94}}
   .hero-art picture{animation:stick .55s cubic-bezier(.2,1.5,.4,1) backwards;animation-delay:var(--d,0s)}
   .hero-art .a1{--d:.05s}.hero-art .a4{--d:.12s}.hero-art .a2{--d:.2s}.hero-art .a5{--d:.26s}.hero-art .a3{--d:.32s}
   @keyframes stick{from{scale:.55;translate:0 18px}}
@@ -248,7 +309,7 @@ html:not([data-platform]) .get>[data-for=android],
 }
 
 @media (forced-colors:active){
-  .card,.step,.qr-card,.private,.btn{border:2px solid CanvasText}
+  .card,.step,.qr-card,.private,.btn,.qa{border:2px solid CanvasText}
 }
 </style>
 <!-- /shared-head -->
@@ -257,6 +318,7 @@ html:not([data-platform]) .get>[data-for=android],
 <meta property="og:title" content="Peel privacy policy">
 <meta property="og:url" content="https://peel.example/privacy">
 <meta property="og:image" content="https://peel.example/og.png">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
