@@ -35,7 +35,7 @@ Future<StickerSound?> showSoundSheet(
   (_) => _SoundSheet(fixedLengthMs: fixedLengthMs, start: start),
 );
 
-enum _Mode { choose, recording, paused, recorded, file }
+enum _Mode { choose, ready, recording, paused, recorded, file }
 
 class _SoundSheet extends StatefulWidget {
   const _SoundSheet({this.fixedLengthMs, this.start = SoundStart.choose});
@@ -58,7 +58,14 @@ class _SoundSheetState extends State<_SoundSheet> {
   final _levels = <double>[];
   StreamSubscription<Amplitude>? _ampSub;
   Timer? _timer;
+  final _clock = Stopwatch(); // Stops while paused.
   int _recordedMs = 0;
+
+  /// True while the recorder is starting or stopping, so quick taps can't
+  /// start or stop it twice.
+  bool _busy = false;
+
+  int get _limitMs => widget.fixedLengthMs ?? _maxMs;
 
   // File.
   String? _filePath;
@@ -91,7 +98,8 @@ class _SoundSheetState extends State<_SoundSheet> {
     });
     switch (widget.start) {
       case SoundStart.record:
-        WidgetsBinding.instance.addPostFrameCallback((_) => _startRecording());
+        _mode = _Mode.ready;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _getReady());
       case SoundStart.file:
         WidgetsBinding.instance.addPostFrameCallback((_) => _pickFile());
       case SoundStart.choose:
@@ -110,74 +118,123 @@ class _SoundSheetState extends State<_SoundSheet> {
     super.dispose();
   }
 
-  Future<void> _startRecording() async {
+  /// Opens the recorder without recording: the user taps Start when
+  /// they're ready. Asks for the microphone now, so the system prompt
+  /// never lands in the middle of a take.
+  Future<void> _getReady() async {
     await _player.stop();
-    if (!await _recorder.hasPermission()) {
-      setState(
-        () => _message = 'Peel can’t use the microphone. Turn it on in Settings, or pick an audio file.',
-      );
-      return;
-    }
-    final dir = await getTemporaryDirectory();
-    final path =
-        '${dir.path}/voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
-    await _recorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc),
-      path: path,
-    );
-    _levels.clear();
-    _recordedMs = 0;
-    _ampSub = _recorder
-        .onAmplitudeChanged(const Duration(milliseconds: 100))
-        .listen(
-          (a) => setState(
-            () => _levels.add(((a.current + 45) / 45).clamp(0.08, 1.0)),
-          ),
-        );
-    _startClock();
+    final allowed = await _recorder.hasPermission();
+    if (!mounted) return;
     setState(() {
-      _recordingPath = path;
-      _mode = _Mode.recording;
-      _message = null;
+      if (!allowed) {
+        _mode = _Mode.choose;
+        _message = 'Peel can’t use the microphone. Turn it on in Settings, or pick an audio file.';
+        return;
+      }
+      _mode = _Mode.ready;
+      _clock.reset();
+      _recordedMs = 0;
+      _levels.clear();
     });
   }
 
-  /// Counts recording time (paused time doesn't count) and stops at the
-  /// limit.
-  void _startClock() {
-    final limit = widget.fixedLengthMs ?? _maxMs;
+  Future<void> _startRecording() async {
+    if (_mode != _Mode.ready || _busy) return;
+    // Show the recording controls straight away; the clock only runs once
+    // the microphone is actually listening.
+    setState(() {
+      _busy = true;
+      _mode = _Mode.recording;
+      _message = null;
+    });
+    try {
+      await _player.stop();
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc),
+        path: path,
+      );
+      _recordingPath = path;
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _mode = _Mode.ready;
+          _message = 'Couldn’t start recording. Please try again.';
+        });
+      }
+      return;
+    }
+    _ampSub = _recorder
+        .onAmplitudeChanged(const Duration(milliseconds: 100))
+        .listen((a) {
+          // The clock's tick repaints; this only collects levels.
+          if (_mode == _Mode.recording) {
+            _levels.add(((a.current + 45) / 45).clamp(0.08, 1.0));
+          }
+        });
+    _clock
+      ..reset()
+      ..start();
+    _startTicking();
+    if (mounted) setState(() => _busy = false);
+  }
+
+  /// Repaints the timer and bars, and stops at the limit. Time comes from
+  /// a stopwatch, so it stays exact however busy the phone is.
+  void _startTicking() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
-      setState(() => _recordedMs += 100);
-      if (_recordedMs >= limit) _stopRecording();
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!mounted) return;
+      setState(
+        () => _recordedMs = math.min(_clock.elapsedMilliseconds, _limitMs),
+      );
+      if (_clock.elapsedMilliseconds >= _limitMs) _stopRecording();
     });
   }
 
   Future<void> _pauseRecording() async {
-    if (_mode != _Mode.recording) return;
+    if (_mode != _Mode.recording || _busy) return;
+    _clock.stop();
     _timer?.cancel();
-    _ampSub?.pause();
+    setState(() {
+      _busy = true;
+      _mode = _Mode.paused;
+      _recordedMs = math.min(_clock.elapsedMilliseconds, _limitMs);
+    });
     await _recorder.pause();
-    if (mounted) setState(() => _mode = _Mode.paused);
+    if (mounted) setState(() => _busy = false);
   }
 
   Future<void> _resumeRecording() async {
-    if (_mode != _Mode.paused) return;
+    if (_mode != _Mode.paused || _busy) return;
+    setState(() {
+      _busy = true;
+      _mode = _Mode.recording;
+    });
     await _recorder.resume();
-    _ampSub?.resume();
-    _startClock();
-    if (mounted) setState(() => _mode = _Mode.recording);
+    _clock.start();
+    _startTicking();
+    if (mounted) setState(() => _busy = false);
   }
 
-  /// Throws the take away and goes back to choosing.
+  /// Throws the take away and waits, ready to record again.
   Future<void> _discardRecording() async {
+    if (_busy) return;
+    _busy = true;
     _timer?.cancel();
+    _clock
+      ..stop()
+      ..reset();
     await _ampSub?.cancel();
     await _recorder.cancel();
     await useSpeakerForPlayback();
     if (!mounted) return;
     setState(() {
-      _mode = _Mode.choose;
+      _busy = false;
+      _mode = _Mode.ready;
       _recordedMs = 0;
       _levels.clear();
     });
@@ -185,21 +242,27 @@ class _SoundSheetState extends State<_SoundSheet> {
 
   Future<void> _stopRecording() async {
     if (_mode != _Mode.recording && _mode != _Mode.paused) return;
+    if (_busy) return;
+    _busy = true;
     _timer?.cancel();
+    _clock.stop();
     await _ampSub?.cancel();
     final path = await _recorder.stop();
     // Recording leaves iOS routing sound to the earpiece, which sounds
     // like silence. Switch back to normal playback through the speaker.
     await useSpeakerForPlayback();
     if (!mounted) return;
-    if (path == null || _recordedMs < 300) {
-      setState(() {
-        _mode = _Mode.choose;
-        _message = 'That was too short. Hold on a little longer.';
-      });
-      return;
-    }
+    final ms = math.min(_clock.elapsedMilliseconds, _limitMs);
     setState(() {
+      _busy = false;
+      if (path == null || ms < 300) {
+        _mode = _Mode.ready;
+        _recordedMs = 0;
+        _levels.clear();
+        _message = 'That was too short. Tap Start and talk a little longer.';
+        return;
+      }
+      _recordedMs = ms;
       _recordingPath = path;
       _mode = _Mode.recorded;
     });
@@ -254,7 +317,10 @@ class _SoundSheetState extends State<_SoundSheet> {
   Widget build(BuildContext context) {
     return switch (_mode) {
       _Mode.choose => _choose(),
-      _Mode.recording || _Mode.paused || _Mode.recorded => _recordingView(),
+      _Mode.ready ||
+      _Mode.recording ||
+      _Mode.paused ||
+      _Mode.recorded => _recordingView(),
       _Mode.file => _fileView(),
     };
   }
@@ -274,7 +340,7 @@ class _SoundSheetState extends State<_SoundSheet> {
                   icon: Icons.mic_rounded,
                   title: 'Record',
                   caption: 'Your voice',
-                  onTap: _startRecording,
+                  onTap: _getReady,
                 ),
               ),
               const SizedBox(width: 12),
@@ -304,22 +370,25 @@ class _SoundSheetState extends State<_SoundSheet> {
   }
 
   Widget _recordingView() {
+    final ready = _mode == _Mode.ready;
     final recording = _mode == _Mode.recording;
     final paused = _mode == _Mode.paused;
     final taking = recording || paused;
-    final limit = widget.fixedLengthMs ?? _maxMs;
+    final limit = _limitMs;
     const pair = PeelPairs.bubblegum;
     return PeelSheet(
-      title: recording
-          ? 'Recording.'
-          : paused
-          ? 'Paused.'
-          : 'Sounds good.',
-      subtitle: recording
-          ? 'Up to ${limit ~/ 1000} s.'
-          : paused
-          ? 'Carry on, or tap Done.'
-          : 'Play it back. Not happy? Record again.',
+      title: switch (_mode) {
+        _Mode.ready => 'Record a sound.',
+        _Mode.recording => 'Recording.',
+        _Mode.paused => 'Paused.',
+        _ => 'Sounds good.',
+      },
+      subtitle: switch (_mode) {
+        _Mode.ready => 'Tap Start when you’re ready.',
+        _Mode.recording => 'Up to ${limit ~/ 1000} s.',
+        _Mode.paused => 'Carry on, or tap Done.',
+        _ => 'Play it back. Not happy? Record again.',
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -414,7 +483,26 @@ class _SoundSheetState extends State<_SoundSheet> {
           const SizedBox(height: 18),
           // Recorder controls: one big button in the middle for the main
           // action, a smaller one each side; labels say what each does.
-          if (taking)
+          if (ready)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _RoundControl(
+                  big: true,
+                  label: 'Start',
+                  onTap: _busy ? null : _startRecording,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE5383B),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else if (taking)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,12 +510,16 @@ class _SoundSheetState extends State<_SoundSheet> {
                 _RoundControl(
                   label: 'Start over',
                   icon: Icons.delete_rounded,
-                  onTap: _discardRecording,
+                  onTap: _busy ? null : _discardRecording,
                 ),
                 _RoundControl(
                   big: true,
                   label: recording ? 'Pause' : 'Resume',
-                  onTap: recording ? _pauseRecording : _resumeRecording,
+                  onTap: _busy
+                      ? null
+                      : recording
+                      ? _pauseRecording
+                      : _resumeRecording,
                   child: recording
                       ? Icon(
                           Icons.pause_rounded,
@@ -446,7 +538,7 @@ class _SoundSheetState extends State<_SoundSheet> {
                 _RoundControl(
                   label: 'Done',
                   icon: Icons.stop_rounded,
-                  onTap: _stopRecording,
+                  onTap: _busy ? null : _stopRecording,
                 ),
               ],
             )
@@ -458,7 +550,7 @@ class _SoundSheetState extends State<_SoundSheet> {
                 _RoundControl(
                   label: 'Record again',
                   icon: Icons.mic_rounded,
-                  onTap: _startRecording,
+                  onTap: _getReady,
                 ),
                 _RoundControl(
                   big: true,
@@ -474,8 +566,12 @@ class _SoundSheetState extends State<_SoundSheet> {
                 const SizedBox(width: 64),
               ],
             ),
+          if (_message != null && ready) ...[
+            const SizedBox(height: 12),
+            PeelNote(text: _message!, pair: PeelPairs.butter),
+          ],
           const SizedBox(height: 14),
-          if (!taking)
+          if (_mode == _Mode.recorded)
             PrimaryPillButton(
               label: 'Use this sound',
               onPressed: () => _use(
@@ -753,7 +849,7 @@ class _RoundControl extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final IconData? icon;
   final Widget? child;
   final bool big;
