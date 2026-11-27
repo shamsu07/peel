@@ -35,7 +35,7 @@ Future<StickerSound?> showSoundSheet(
   (_) => _SoundSheet(fixedLengthMs: fixedLengthMs, start: start),
 );
 
-enum _Mode { choose, recording, recorded, file }
+enum _Mode { choose, recording, paused, recorded, file }
 
 class _SoundSheet extends StatefulWidget {
   const _SoundSheet({this.fixedLengthMs, this.start = SoundStart.choose});
@@ -134,11 +134,7 @@ class _SoundSheetState extends State<_SoundSheet> {
             () => _levels.add(((a.current + 45) / 45).clamp(0.08, 1.0)),
           ),
         );
-    final limit = widget.fixedLengthMs ?? _maxMs;
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
-      setState(() => _recordedMs += 100);
-      if (_recordedMs >= limit) _stopRecording();
-    });
+    _startClock();
     setState(() {
       _recordingPath = path;
       _mode = _Mode.recording;
@@ -146,7 +142,49 @@ class _SoundSheetState extends State<_SoundSheet> {
     });
   }
 
+  /// Counts recording time (paused time doesn't count) and stops at the
+  /// limit.
+  void _startClock() {
+    final limit = widget.fixedLengthMs ?? _maxMs;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
+      setState(() => _recordedMs += 100);
+      if (_recordedMs >= limit) _stopRecording();
+    });
+  }
+
+  Future<void> _pauseRecording() async {
+    if (_mode != _Mode.recording) return;
+    _timer?.cancel();
+    _ampSub?.pause();
+    await _recorder.pause();
+    if (mounted) setState(() => _mode = _Mode.paused);
+  }
+
+  Future<void> _resumeRecording() async {
+    if (_mode != _Mode.paused) return;
+    await _recorder.resume();
+    _ampSub?.resume();
+    _startClock();
+    if (mounted) setState(() => _mode = _Mode.recording);
+  }
+
+  /// Throws the take away and goes back to choosing.
+  Future<void> _discardRecording() async {
+    _timer?.cancel();
+    await _ampSub?.cancel();
+    await _recorder.cancel();
+    await useSpeakerForPlayback();
+    if (!mounted) return;
+    setState(() {
+      _mode = _Mode.choose;
+      _recordedMs = 0;
+      _levels.clear();
+    });
+  }
+
   Future<void> _stopRecording() async {
+    if (_mode != _Mode.recording && _mode != _Mode.paused) return;
     _timer?.cancel();
     await _ampSub?.cancel();
     final path = await _recorder.stop();
@@ -216,7 +254,7 @@ class _SoundSheetState extends State<_SoundSheet> {
   Widget build(BuildContext context) {
     return switch (_mode) {
       _Mode.choose => _choose(),
-      _Mode.recording || _Mode.recorded => _recordingView(),
+      _Mode.recording || _Mode.paused || _Mode.recorded => _recordingView(),
       _Mode.file => _fileView(),
     };
   }
@@ -267,13 +305,21 @@ class _SoundSheetState extends State<_SoundSheet> {
 
   Widget _recordingView() {
     final recording = _mode == _Mode.recording;
+    final paused = _mode == _Mode.paused;
+    final taking = recording || paused;
     final limit = widget.fixedLengthMs ?? _maxMs;
     const pair = PeelPairs.bubblegum;
     return PeelSheet(
-      title: recording ? 'Recording.' : 'Sounds good.',
+      title: recording
+          ? 'Recording.'
+          : paused
+          ? 'Paused.'
+          : 'Sounds good.',
       subtitle: recording
-          ? 'Up to ${limit ~/ 1000} s. Tap the button to stop.'
-          : 'Tap play to hear it. Not happy? Record again.',
+          ? 'Up to ${limit ~/ 1000} s.'
+          : paused
+          ? 'Carry on, or tap Done.'
+          : 'Play it back. Not happy? Record again.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -298,6 +344,26 @@ class _SoundSheetState extends State<_SoundSheet> {
                       ),
                     ),
                     const Spacer(),
+                    if (taking) ...[
+                      // A blinking red dot while recording; still when paused.
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: recording && (_recordedMs ~/ 500).isOdd
+                            ? 0.25
+                            : 1,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: paused
+                                ? pair.ink.withValues(alpha: 0.4)
+                                : const Color(0xFFE5383B),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
                     Text(
                       'of ${limit ~/ 1000} s',
                       style: PeelType.caption(color: pair.ink)
@@ -345,53 +411,71 @@ class _SoundSheetState extends State<_SoundSheet> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 96,
-            child: Center(
-              child: recording
-                  ? _BigRoundButton(
-                      label: 'Stop recording',
-                      onTap: _stopRecording,
-                      child: Container(
-                        width: 26,
-                        height: 26,
-                        decoration: ShapeDecoration(
-                          color: const Color(0xFFFF5C8A),
-                          shape: RoundedSuperellipseBorder(
-                            borderRadius: BorderRadius.circular(7),
+          const SizedBox(height: 18),
+          // Recorder controls: one big button in the middle for the main
+          // action, a smaller one each side; labels say what each does.
+          if (taking)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _RoundControl(
+                  label: 'Start over',
+                  icon: Icons.delete_rounded,
+                  onTap: _discardRecording,
+                ),
+                _RoundControl(
+                  big: true,
+                  label: recording ? 'Pause' : 'Resume',
+                  onTap: recording ? _pauseRecording : _resumeRecording,
+                  child: recording
+                      ? Icon(
+                          Icons.pause_rounded,
+                          color: PeelColors.surface,
+                          size: 40,
+                        )
+                      : Container(
+                          width: 26,
+                          height: 26,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE5383B),
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SecondaryPillButton(
-                          label: 'Record again',
-                          leading: const Icon(Icons.mic_rounded, size: 18),
-                          onPressed: _startRecording,
-                        ),
-                        const SizedBox(width: 16),
-                        _BigRoundButton(
-                          label: _playing
-                              ? 'Stop playing'
-                              : 'Play your recording',
-                          onTap: () => _play(_recordingPath!, 0, _recordedMs),
-                          child: Icon(
-                            _playing
-                                ? Icons.stop_rounded
-                                : Icons.play_arrow_rounded,
-                            color: PeelColors.surface,
-                            size: 36,
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+                _RoundControl(
+                  label: 'Done',
+                  icon: Icons.stop_rounded,
+                  onTap: _stopRecording,
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _RoundControl(
+                  label: 'Record again',
+                  icon: Icons.mic_rounded,
+                  onTap: _startRecording,
+                ),
+                _RoundControl(
+                  big: true,
+                  label: _playing ? 'Stop' : 'Play',
+                  onTap: () => _play(_recordingPath!, 0, _recordedMs),
+                  child: Icon(
+                    _playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                    color: PeelColors.surface,
+                    size: 40,
+                  ),
+                ),
+                // Keeps the big button centred.
+                const SizedBox(width: 64),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          if (!recording)
+          const SizedBox(height: 14),
+          if (!taking)
             PrimaryPillButton(
               label: 'Use this sound',
               onPressed: () => _use(
@@ -657,35 +741,67 @@ class _SourceButton extends StatelessWidget {
   }
 }
 
-class _BigRoundButton extends StatelessWidget {
-  const _BigRoundButton({
+/// A recorder button: a round control with its label underneath. [big]
+/// is the main action (record, pause, play).
+class _RoundControl extends StatelessWidget {
+  const _RoundControl({
     required this.label,
     required this.onTap,
-    required this.child,
+    this.icon,
+    this.child,
+    this.big = false,
   });
 
   final String label;
   final VoidCallback onTap;
-  final Widget child;
+  final IconData? icon;
+  final Widget? child;
+  final bool big;
 
   @override
   Widget build(BuildContext context) {
+    final d = big ? 84.0 : 56.0;
     return Semantics(
       button: true,
       label: label,
       excludeSemantics: true,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Container(
-          width: 84,
-          height: 84,
-          decoration: BoxDecoration(
-            color: PeelColors.ink,
-            shape: BoxShape.circle,
-            border: Border.all(color: PeelColors.surface, width: 5),
-            boxShadow: PeelShadows.floating,
+        child: SizedBox(
+          width: 96,
+          child: Column(
+            children: [
+              SizedBox(
+                height: 84,
+                child: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: d,
+                    height: d,
+                    decoration: BoxDecoration(
+                      color: big ? PeelColors.ink : PeelColors.paper,
+                      shape: BoxShape.circle,
+                      border: big
+                          ? Border.all(color: PeelColors.surface, width: 5)
+                          : null,
+                      boxShadow: big ? PeelShadows.floating : null,
+                    ),
+                    child: Center(
+                      child:
+                          child ?? Icon(icon, color: PeelColors.ink, size: 24),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: PeelType.caption(color: PeelColors.ink)
+                    .copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
-          child: Center(child: child),
         ),
       ),
     );
